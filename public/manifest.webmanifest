@@ -1,0 +1,13 @@
+{
+  "name": "SumateRD",
+  "short_name": "SumateRD",
+  "description": "Opinión y sociedad desde República Dominicana.",
+  "lang": "es-DO",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f7f8",
+  "theme_color": "#002d62",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

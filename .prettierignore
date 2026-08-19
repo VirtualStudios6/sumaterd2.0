@@ -1,0 +1,8 @@
+node_modules/
+functions/node_modules/
+dist/
+functions/lib/
+package-lock.json
+functions/package-lock.json
+*.log
+*.tsbuildinfo

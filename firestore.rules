@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owns(uid) { return signedIn() && request.auth.uid == uid; }
+    function admin() { return signedIn() && 'admin' in request.auth.token && request.auth.token.admin == true; }
+    function published() { return resource.data.status == 'published'; }
+
+    match /articles/{articleId} {
+      allow get, list: if published() || admin();
+      allow create, update, delete: if admin();
+    }
+    match /carousel/{panelId} {
+      allow get, list: if resource.data.active == true || admin();
+      allow create, update, delete: if admin();
+    }
+    match /categories/{categoryId} {
+      allow read: if resource.data.active == true || admin();
+      allow write: if admin();
+    }
+    match /settings/{settingId} {
+      allow read: if resource.data.public == true || admin();
+      allow write: if admin();
+    }
+    match /users/{uid} {
+      allow read: if owns(uid) || admin();
+      allow create: if false;
+      allow update: if owns(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'updatedAt'])
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() >= 3
+        && request.resource.data.fullName.size() <= 100;
+      allow delete: if false;
+    }
+    match /cedulaReservations/{id} { allow read, write: if false; }
+    match /userPrivate/{uid} { allow read, write: if false; }
+    match /changeInterests/{id} { allow read, write: if false; }
+    match /forumPosts/{postId} {
+      allow get, list: if resource.data.status == 'published';
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'title', 'content', 'topic', 'authorId', 'authorName', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.authorName is string
+        && request.resource.data.authorName.size() >= 2
+        && request.resource.data.authorName.size() <= 80
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 5
+        && request.resource.data.title.size() <= 100
+        && request.resource.data.content is string
+        && request.resource.data.content.size() >= 10
+        && request.resource.data.content.size() <= 1000
+        && request.resource.data.topic in ['comunidad', 'pais', 'educacion', 'juventud', 'accesibilidad']
+        && request.resource.data.status == 'published'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update, delete: if admin();
+
+      match /forumReplies/{replyId} {
+        allow get, list: if resource.data.status == 'published';
+        allow create: if signedIn()
+          && request.resource.data.keys().hasOnly([
+            'content', 'authorId', 'authorName', 'status', 'createdAt'
+          ])
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.authorName is string
+          && request.resource.data.authorName.size() >= 2
+          && request.resource.data.authorName.size() <= 80
+          && request.resource.data.content is string
+          && request.resource.data.content.size() >= 2
+          && request.resource.data.content.size() <= 600
+          && request.resource.data.status == 'published'
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if admin();
+      }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
