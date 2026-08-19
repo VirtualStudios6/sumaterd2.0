@@ -11,8 +11,8 @@ export function PageTransitionSplash() {
     const reducedMotion =
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const leaveTimer = window.setTimeout(() => setPhase('leaving'), reducedMotion ? 100 : 850)
-    const hideTimer = window.setTimeout(() => setPhase('hidden'), reducedMotion ? 160 : 1080)
+    const leaveTimer = window.setTimeout(() => setPhase('leaving'), reducedMotion ? 2800 : 2700)
+    const hideTimer = window.setTimeout(() => setPhase('hidden'), 3000)
     return () => {
       window.clearTimeout(leaveTimer)
       window.clearTimeout(hideTimer)

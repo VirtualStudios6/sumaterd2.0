@@ -6,7 +6,7 @@ import { PageTransitionSplash } from '../src/components/PageTransitionSplash'
 afterEach(() => vi.useRealTimers())
 
 describe('PageTransitionSplash', () => {
-  it('muestra una transición breve y luego libera la página', () => {
+  it('muestra la transición durante tres segundos y luego libera la página', () => {
     vi.useFakeTimers()
     render(
       <MemoryRouter>
@@ -14,7 +14,7 @@ describe('PageTransitionSplash', () => {
       </MemoryRouter>,
     )
     expect(screen.getByRole('status', { name: 'Cargando página' })).toBeInTheDocument()
-    act(() => vi.advanceTimersByTime(1100))
+    act(() => vi.advanceTimersByTime(3000))
     expect(screen.queryByRole('status', { name: 'Cargando página' })).not.toBeInTheDocument()
   })
 })
