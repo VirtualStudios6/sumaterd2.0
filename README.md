@@ -9,7 +9,7 @@ SumateRD es una webapp editorial y de participación centrada en Opinión, Socie
 - Firebase Authentication, Cloud Firestore, Storage y Cloud Functions.
 - React Markdown + GFM + `rehype-sanitize`.
 - Vitest, Testing Library, ESLint y Prettier.
-- PWA con service worker generado por Vite PWA.
+- PWA con service worker de Vite PWA.
 - Apache/Hostinger con fallback SPA mediante `.htaccess`.
 
 ## Arquitectura
@@ -158,6 +158,18 @@ Publica **el contenido** de `dist/` en `public_html/`. Vite copia `.htaccess`, q
 - que las reglas, índices y Functions se hayan desplegado por separado.
 
 Firebase Hosting no es requisito y no se usa para el frontend principal.
+
+## GitHub Pages
+
+Cada cambio publicado en `main` ejecuta `.github/workflows/pages.yml`, compila la aplicación y despliega `dist/` en GitHub Pages. La configuración usa `/sumaterd2.0/` como ruta base y genera `404.html` para conservar las rutas de la SPA al abrirlas o actualizarlas directamente.
+
+URL del proyecto:
+
+```text
+https://virtualstudios6.github.io/sumaterd2.0/
+```
+
+Para que el acceso con Google funcione desde esa dirección, añade `virtualstudios6.github.io` en Firebase Authentication > Settings > Authorized domains.
 
 ## Seguridad y operación
 

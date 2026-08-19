@@ -1,0 +1,62 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VITE_BASE_PATH: /sumaterd2.0/
+      VITE_SITE_URL: https://virtualstudios6.github.io/sumaterd2.0
+      VITE_FIREBASE_API_KEY: AIzaSyBKCWVjYAwtF1FY073m9646RCI3duP6EVM
+      VITE_FIREBASE_AUTH_DOMAIN: sumaterd-da931.firebaseapp.com
+      VITE_FIREBASE_PROJECT_ID: sumaterd-da931
+      VITE_FIREBASE_STORAGE_BUCKET: sumaterd-da931.firebasestorage.app
+      VITE_FIREBASE_MESSAGING_SENDER_ID: '696790776839'
+      VITE_FIREBASE_APP_ID: 1:696790776839:web:d2f377f674434b0aa9fea2
+      VITE_USE_FIREBASE_EMULATORS: 'false'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Build
+        run: npm run build
+      - name: Add SPA fallback
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

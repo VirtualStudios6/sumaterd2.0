@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import { useState } from 'react'
-import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Spinner } from '../components/Ui'
 import { useAdmin } from '../features/admin/AdminProvider'
@@ -79,9 +79,9 @@ export function AdminLayout() {
         <div className="admin-session-bar">
           <span>Sesión protegida</span>
           <strong>{user?.email}</strong>
-          <a href="/" target="_blank" rel="noreferrer">
+          <Link to="/" target="_blank" rel="noreferrer">
             Ver sitio público
-          </a>
+          </Link>
         </div>
         <Outlet />
       </main>

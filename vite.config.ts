@@ -6,8 +6,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const siteUrl = (env.VITE_SITE_URL || 'http://localhost:5173').replace(/\/$/, '')
+  const base = `/${(env.VITE_BASE_PATH || '').replace(/^\/+|\/+$/g, '')}`.replace(/^\/$/, '/')
+  const normalizedBase = base === '/' ? '/' : `${base}/`
+  const routePrefix = normalizedBase === '/' ? '' : normalizedBase.slice(0, -1)
   const categories = ['opinion', 'sociedad', 'cambio']
   return {
+    base: normalizedBase,
     build: {
       rollupOptions: {
         output: {
@@ -51,7 +55,10 @@ export default defineConfig(({ mode }) => {
         includeAssets: ['icons/icon.svg'],
         manifest: false,
         workbox: {
-          navigateFallbackDenylist: [/^\/admin/, /^\/perfil/],
+          navigateFallbackDenylist: [
+            new RegExp(`^${routePrefix}/admin`),
+            new RegExp(`^${routePrefix}/perfil`),
+          ],
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\//,

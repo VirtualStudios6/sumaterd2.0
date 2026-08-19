@@ -113,7 +113,7 @@ const wait = (node: React.ReactNode) => (
   <Suspense fallback={<RouteLoadingFallback />}>{node}</Suspense>
 )
 
-export const router = createBrowserRouter([
+const routes = [
   {
     path: '/',
     element: <PublicLayout />,
@@ -154,4 +154,8 @@ export const router = createBrowserRouter([
       { path: 'settings', element: wait(<SettingsPage />) },
     ],
   },
-])
+] satisfies Parameters<typeof createBrowserRouter>[0]
+
+const routerBase = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
+export const router = createBrowserRouter(routes, { basename: routerBase })
