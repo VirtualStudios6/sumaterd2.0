@@ -83,6 +83,10 @@ describe('reglas Firestore', () => {
       cedulaMasked: 'No registrada (Google)',
       status: 'active',
       authProvider: 'google.com',
+      phone: '',
+      province: '',
+      municipality: '',
+      bio: '',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }
@@ -105,6 +109,21 @@ describe('reglas Firestore', () => {
       .firestore()
     await assertFails(
       setDoc(doc(passwordDb, 'users/password-user'), { ...profile, uid: 'password-user' }),
+    )
+    await assertSucceeds(
+      updateDoc(doc(googleDb, 'users/google-user'), {
+        phone: '809-555-0101',
+        province: 'Santo Domingo',
+        municipality: 'Santo Domingo Este',
+        bio: 'Me interesa aportar ideas para mi comunidad.',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(googleDb, 'users/google-user'), {
+        authProvider: 'password',
+        updatedAt: serverTimestamp(),
+      }),
     )
   })
   it('usuario crea temas y respuestas del foro con su propia identidad', async () => {

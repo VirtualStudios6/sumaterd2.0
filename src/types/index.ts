@@ -68,6 +68,11 @@ export interface UserProfile {
   fullName: string
   email: string
   cedulaMasked: string
+  phone?: string
+  province?: string
+  municipality?: string
+  bio?: string
+  authProvider?: 'google.com' | 'password'
   status: 'active' | 'disabled'
   createdAt: Timestamp | Date | string | null
   updatedAt: Timestamp | Date | string | null

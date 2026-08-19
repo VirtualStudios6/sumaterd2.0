@@ -7,6 +7,7 @@ import {
   signInWithPopup,
   signOut,
   updatePassword,
+  updateProfile as updateAuthProfile,
 } from 'firebase/auth'
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
@@ -59,6 +60,10 @@ export async function signInWithGoogle() {
         fullName: googleName.length >= 3 ? googleName : 'Miembro de SumateRD',
         email: user.email || '',
         cedulaMasked: 'No registrada (Google)',
+        phone: '',
+        province: '',
+        municipality: '',
+        bio: '',
         status: 'active',
         authProvider: 'google.com',
         createdAt: serverTimestamp(),
@@ -87,11 +92,28 @@ export async function getProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, 'users', uid))
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as unknown as UserProfile) : null
 }
-export async function updateProfileName(uid: string, fullName: string) {
+export async function updateProfileDetails(
+  uid: string,
+  input: {
+    fullName: string
+    phone: string
+    province: string
+    municipality: string
+    bio: string
+  },
+) {
+  const fullName = input.fullName.trim().slice(0, 100)
   await updateDoc(doc(db, 'users', uid), {
-    fullName: fullName.trim(),
+    fullName,
+    phone: input.phone.trim().slice(0, 24),
+    province: input.province.trim().slice(0, 60),
+    municipality: input.municipality.trim().slice(0, 80),
+    bio: input.bio.trim().slice(0, 280),
     updatedAt: serverTimestamp(),
   })
+  if (auth.currentUser?.uid === uid && auth.currentUser.displayName !== fullName) {
+    await updateAuthProfile(auth.currentUser, { displayName: fullName })
+  }
 }
 export async function changePassword(currentPassword: string, nextPassword: string) {
   const user = auth.currentUser

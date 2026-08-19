@@ -1,4 +1,15 @@
-import { Eye, EyeOff } from 'lucide-react'
+import {
+  BadgeCheck,
+  CalendarDays,
+  Eye,
+  EyeOff,
+  LogOut,
+  Mail,
+  MapPin,
+  ShieldCheck,
+  Trash2,
+  UserRound,
+} from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
@@ -13,7 +24,7 @@ import {
   registerUser,
   resetPassword,
   signInWithGoogle,
-  updateProfileName,
+  updateProfileDetails,
 } from '../services/auth'
 import type { UserProfile } from '../types'
 import { formatCedula, isValidCedula } from '../utils/cedula'
@@ -339,23 +350,74 @@ export function ResetPasswordPage() {
   )
 }
 
+const DOMINICAN_PROVINCES = [
+  'Azua',
+  'Bahoruco',
+  'Barahona',
+  'Dajabón',
+  'Distrito Nacional',
+  'Duarte',
+  'Elías Piña',
+  'El Seibo',
+  'Espaillat',
+  'Hato Mayor',
+  'Hermanas Mirabal',
+  'Independencia',
+  'La Altagracia',
+  'La Romana',
+  'La Vega',
+  'María Trinidad Sánchez',
+  'Monseñor Nouel',
+  'Monte Cristi',
+  'Monte Plata',
+  'Pedernales',
+  'Peravia',
+  'Puerto Plata',
+  'Samaná',
+  'San Cristóbal',
+  'San José de Ocoa',
+  'San Juan',
+  'San Pedro de Macorís',
+  'Sánchez Ramírez',
+  'Santiago',
+  'Santiago Rodríguez',
+  'Santo Domingo',
+  'Valverde',
+] as const
+
 export function ProfilePage() {
   const { user, loading: authLoading } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [name, setName] = useState('')
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [details, setDetails] = useState({
+    fullName: '',
+    phone: '',
+    province: '',
+    municipality: '',
+    bio: '',
+  })
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const hasPassword = user?.providerData.some((provider) => provider.providerId === 'password')
   useEffect(() => {
     if (user)
       getProfile(user.uid)
         .then((p) => {
           setProfile(p)
-          setName(p?.fullName || '')
+          setDetails({
+            fullName: p?.fullName || user.displayName || '',
+            phone: p?.phone || '',
+            province: p?.province || '',
+            municipality: p?.municipality || '',
+            bio: p?.bio || '',
+          })
         })
         .catch(() => setError('No pudimos cargar el perfil.'))
+        .finally(() => setProfileLoading(false))
   }, [user])
   if (authLoading)
     return (
@@ -364,14 +426,21 @@ export function ProfilePage() {
       </div>
     )
   if (!user) return <Navigate to="/login" replace />
-  const saveName = async (e: FormEvent) => {
+  const saveDetails = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setMessage('')
+    setSaving(true)
     try {
-      await updateProfileName(user.uid, name)
-      setMessage('Nombre actualizado.')
+      await updateProfileDetails(user.uid, details)
+      setProfile((currentProfile) =>
+        currentProfile ? { ...currentProfile, ...details, updatedAt: new Date() } : currentProfile,
+      )
+      setMessage('Tu perfil fue actualizado correctamente.')
     } catch {
-      setError('No pudimos actualizar el nombre.')
+      setError('No pudimos actualizar el perfil. Revisa los datos e intenta nuevamente.')
+    } finally {
+      setSaving(false)
     }
   }
   const savePassword = async (e: FormEvent) => {
@@ -386,6 +455,34 @@ export function ProfilePage() {
       setError('No pudimos cambiar la contraseña. Verifica tu contraseña actual.')
     }
   }
+  const deleteProfile = async () => {
+    if (!window.confirm('¿Seguro que deseas eliminar tu cuenta? Esta acción no se puede deshacer.'))
+      return
+    setDeleting(true)
+    setError('')
+    try {
+      await deleteAccountSecurely()
+    } catch {
+      setError('No pudimos eliminar la cuenta. Intenta iniciar sesión nuevamente.')
+      setDeleting(false)
+    }
+  }
+  const initials = (profile?.fullName || user.displayName || 'SR')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+  const providerLabel = hasPassword ? 'Correo y contraseña' : 'Google'
+  const completedFields = [
+    details.fullName,
+    user.email,
+    details.phone,
+    details.province,
+    details.municipality,
+    details.bio,
+  ].filter(Boolean).length
+  const completion = Math.round((completedFields / 6) * 100)
   return (
     <div className="container page profile-page">
       <Helmet>
@@ -397,77 +494,220 @@ export function ProfilePage() {
       </header>
       {error && <ErrorState message={error} />}
       {message && <Notice>{message}</Notice>}
-      <div className="profile-grid">
-        <section>
-          <h2>Información</h2>
-          {profile ? (
-            <dl>
-              <div>
-                <dt>Nombre</dt>
-                <dd>{profile.fullName}</dd>
+      {profileLoading ? (
+        <Spinner />
+      ) : profile ? (
+        <>
+          <section className="profile-summary-card">
+            <div className="profile-avatar" aria-hidden="true">
+              {user.photoURL ? (
+                <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />
+              ) : (
+                <span>{initials}</span>
+              )}
+            </div>
+            <div className="profile-identity">
+              <p>Tu cuenta en SumateRD</p>
+              <h2>{profile.fullName}</h2>
+              <div className="profile-badges">
+                <span>
+                  <BadgeCheck aria-hidden="true" /> Cuenta activa
+                </span>
+                <span>
+                  <ShieldCheck aria-hidden="true" /> Acceso con {providerLabel}
+                </span>
               </div>
+            </div>
+            <div className="profile-completion">
               <div>
-                <dt>Correo</dt>
-                <dd>{profile.email}</dd>
+                <strong>{completion}%</strong>
+                <span>Perfil completado</span>
               </div>
-              <div>
-                <dt>Cédula</dt>
-                <dd>{profile.cedulaMasked}</dd>
+              <div
+                className="profile-progress"
+                role="progressbar"
+                aria-label="Perfil completado"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={completion}
+              >
+                <span style={{ width: `${completion}%` }} />
               </div>
-              <div>
-                <dt>Miembro desde</dt>
-                <dd>{formatDate(profile.createdAt)}</dd>
-              </div>
-            </dl>
-          ) : (
-            <Spinner />
-          )}
-        </section>
-        <section>
-          <h2>Actualizar nombre</h2>
-          <form className="form" onSubmit={saveName}>
-            <label>
-              Nombre completo
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                minLength={3}
-              />
-            </label>
-            <button className="button">Guardar cambios</button>
-          </form>
-        </section>
-        {hasPassword && (
-          <section>
-            <h2>Cambiar contraseña</h2>
-            <form className="form" onSubmit={savePassword}>
-              <PasswordField
-                id="current-password"
-                label="Contraseña actual"
-                value={current}
-                onChange={setCurrent}
-              />
-              <PasswordField
-                id="new-profile-password"
-                label="Nueva contraseña"
-                value={next}
-                onChange={setNext}
-              />
-              <button className="button">Cambiar contraseña</button>
-            </form>
+              {completion < 100 && (
+                <small>Completa tus datos para que tu perfil sea más útil.</small>
+              )}
+            </div>
           </section>
-        )}
-        <section className="danger-zone">
-          <h2>Sesión y cuenta</h2>
-          <button className="button secondary" onClick={() => void logoutUser()}>
-            Cerrar sesión
-          </button>
-          <button className="text-danger" onClick={() => void deleteAccountSecurely()}>
-            Eliminar mi cuenta
-          </button>
-        </section>
-      </div>
+
+          <div className="profile-layout">
+            <section className="profile-details-card">
+              <div className="profile-section-heading">
+                <UserRound aria-hidden="true" />
+                <div>
+                  <h2>Información personal</h2>
+                  <p>Estos datos no se muestran públicamente.</p>
+                </div>
+              </div>
+              <form className="form" onSubmit={saveDetails}>
+                <div className="profile-form-grid">
+                  <label>
+                    Nombre completo
+                    <input
+                      value={details.fullName}
+                      onChange={(e) => setDetails({ ...details, fullName: e.target.value })}
+                      autoComplete="name"
+                      required
+                      minLength={3}
+                      maxLength={100}
+                    />
+                  </label>
+                  <label>
+                    Teléfono
+                    <input
+                      type="tel"
+                      value={details.phone}
+                      onChange={(e) => setDetails({ ...details, phone: e.target.value })}
+                      autoComplete="tel"
+                      placeholder="809-000-0000"
+                      maxLength={24}
+                    />
+                  </label>
+                  <label>
+                    Provincia
+                    <select
+                      value={details.province}
+                      onChange={(e) => setDetails({ ...details, province: e.target.value })}
+                    >
+                      <option value="">Selecciona una provincia</option>
+                      {DOMINICAN_PROVINCES.map((province) => (
+                        <option value={province} key={province}>
+                          {province}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Municipio
+                    <input
+                      value={details.municipality}
+                      onChange={(e) => setDetails({ ...details, municipality: e.target.value })}
+                      autoComplete="address-level2"
+                      maxLength={80}
+                    />
+                  </label>
+                </div>
+                <label>
+                  Sobre mí
+                  <textarea
+                    value={details.bio}
+                    onChange={(e) => setDetails({ ...details, bio: e.target.value })}
+                    placeholder="Cuéntanos brevemente qué temas te interesan o cómo quieres aportar."
+                    maxLength={280}
+                    rows={4}
+                  />
+                  <small className="field-counter">{details.bio.length}/280</small>
+                </label>
+                <button className="button profile-save-button" disabled={saving}>
+                  {saving ? 'Guardando…' : 'Guardar información'}
+                </button>
+              </form>
+            </section>
+
+            <div className="profile-side-stack">
+              <section className="profile-account-card">
+                <div className="profile-section-heading compact">
+                  <ShieldCheck aria-hidden="true" />
+                  <div>
+                    <h2>Cuenta y seguridad</h2>
+                    <p>Información de acceso.</p>
+                  </div>
+                </div>
+                <dl>
+                  <div>
+                    <dt>
+                      <Mail aria-hidden="true" /> Correo
+                    </dt>
+                    <dd>{profile.email}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <BadgeCheck aria-hidden="true" /> Verificación
+                    </dt>
+                    <dd>{user.emailVerified ? 'Correo verificado' : 'Pendiente'}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <ShieldCheck aria-hidden="true" /> Método de acceso
+                    </dt>
+                    <dd>{providerLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <CalendarDays aria-hidden="true" /> Miembro desde
+                    </dt>
+                    <dd>{formatDate(profile.createdAt)}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <MapPin aria-hidden="true" /> Cédula
+                    </dt>
+                    <dd>{profile.cedulaMasked}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              {hasPassword ? (
+                <section>
+                  <h2>Cambiar contraseña</h2>
+                  <form className="form" onSubmit={savePassword}>
+                    <PasswordField
+                      id="current-password"
+                      label="Contraseña actual"
+                      value={current}
+                      onChange={setCurrent}
+                    />
+                    <PasswordField
+                      id="new-profile-password"
+                      label="Nueva contraseña"
+                      value={next}
+                      onChange={setNext}
+                    />
+                    <button className="button full">Cambiar contraseña</button>
+                  </form>
+                </section>
+              ) : (
+                <section className="profile-provider-note">
+                  <ShieldCheck aria-hidden="true" />
+                  <div>
+                    <h2>Protegida por Google</h2>
+                    <p>
+                      La contraseña y la seguridad de acceso se administran desde tu cuenta de
+                      Google.
+                    </p>
+                  </div>
+                </section>
+              )}
+
+              <section className="danger-zone">
+                <h2>Sesión y cuenta</h2>
+                <p>Cierra tu sesión en este dispositivo o elimina definitivamente la cuenta.</p>
+                <button className="button secondary full" onClick={() => void logoutUser()}>
+                  <LogOut aria-hidden="true" /> Cerrar sesión
+                </button>
+                <button
+                  className="text-danger"
+                  disabled={deleting}
+                  onClick={() => void deleteProfile()}
+                >
+                  <Trash2 aria-hidden="true" /> {deleting ? 'Eliminando…' : 'Eliminar mi cuenta'}
+                </button>
+              </section>
+            </div>
+          </div>
+        </>
+      ) : (
+        <ErrorState message="No encontramos la información de tu perfil. Cierra sesión e inicia nuevamente." />
+      )}
     </div>
   )
 }

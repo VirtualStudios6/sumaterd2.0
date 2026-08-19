@@ -28,7 +28,11 @@ service cloud.firestore {
         && request.auth.token.firebase.sign_in_provider == 'google.com'
         && request.resource.data.keys().hasOnly([
           'uid', 'fullName', 'email', 'cedulaMasked', 'status', 'authProvider',
-          'createdAt', 'updatedAt'
+          'phone', 'province', 'municipality', 'bio', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'uid', 'fullName', 'email', 'cedulaMasked', 'status', 'authProvider',
+          'phone', 'province', 'municipality', 'bio', 'createdAt', 'updatedAt'
         ])
         && request.resource.data.uid == uid
         && request.resource.data.email == request.auth.token.email
@@ -38,13 +42,27 @@ service cloud.firestore {
         && request.resource.data.cedulaMasked == 'No registrada (Google)'
         && request.resource.data.status == 'active'
         && request.resource.data.authProvider == 'google.com'
+        && request.resource.data.phone == ''
+        && request.resource.data.province == ''
+        && request.resource.data.municipality == ''
+        && request.resource.data.bio == ''
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
       allow update: if owns(uid)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'updatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'fullName', 'phone', 'province', 'municipality', 'bio', 'updatedAt'
+        ])
         && request.resource.data.fullName is string
         && request.resource.data.fullName.size() >= 3
-        && request.resource.data.fullName.size() <= 100;
+        && request.resource.data.fullName.size() <= 100
+        && (!request.resource.data.keys().hasAny(['phone'])
+          || (request.resource.data.phone is string && request.resource.data.phone.size() <= 24))
+        && (!request.resource.data.keys().hasAny(['province'])
+          || (request.resource.data.province is string && request.resource.data.province.size() <= 60))
+        && (!request.resource.data.keys().hasAny(['municipality'])
+          || (request.resource.data.municipality is string && request.resource.data.municipality.size() <= 80))
+        && (!request.resource.data.keys().hasAny(['bio'])
+          || (request.resource.data.bio is string && request.resource.data.bio.size() <= 280));
       allow delete: if false;
     }
     match /cedulaReservations/{id} { allow read, write: if false; }
