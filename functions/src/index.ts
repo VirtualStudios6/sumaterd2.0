@@ -131,6 +131,41 @@ export const verifyCedula = onCall({ cors: true, secrets: [cedulaHashSecret] }, 
   return { valid: snap.exists && snap.get('uid') === request.auth.uid }
 })
 
+export const registerOwnCedula = onCall(
+  { cors: true, secrets: [cedulaHashSecret] },
+  async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', 'No autorizado.')
+    const uid = request.auth.uid
+    const cedula = normalizeCedula(request.data?.cedula)
+    if (!validCedula(cedula)) throw new HttpsError('invalid-argument', 'La cédula no es válida.')
+
+    const cedulaHash = hashCedula(cedula)
+    const masked = `***-*******-${cedula[10]}`
+    return db.runTransaction(async (tx) => {
+      const privateRef = db.doc(`userPrivate/${uid}`)
+      const profileRef = db.doc(`users/${uid}`)
+      const reservationRef = db.doc(`cedulaReservations/${cedulaHash}`)
+      const [privateSnap, profileSnap, reservationSnap] = await Promise.all([
+        tx.get(privateRef),
+        tx.get(profileRef),
+        tx.get(reservationRef),
+      ])
+      if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Perfil no disponible.')
+      if (privateSnap.exists) {
+        return { registered: false, cedulaMasked: String(profileSnap.get('cedulaMasked') || '') }
+      }
+      if (reservationSnap.exists)
+        throw new HttpsError('already-exists', 'No pudimos registrar esta cédula.')
+
+      const now = FieldValue.serverTimestamp()
+      tx.create(reservationRef, { uid, createdAt: now })
+      tx.create(privateRef, { cedulaHash, createdAt: now })
+      tx.update(profileRef, { cedulaMasked: masked, updatedAt: now })
+      return { registered: true, cedulaMasked: masked }
+    })
+  },
+)
+
 export const deleteOwnAccount = onCall({ cors: true }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'No autorizado.')
   const uid = request.auth.uid

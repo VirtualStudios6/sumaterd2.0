@@ -1,5 +1,5 @@
 import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
@@ -43,14 +43,21 @@ function HeroCarousel({ panels }: { panels: CarouselPanel[] }) {
         fetchPriority="high"
       />
       <div className="hero-shade" />
+      <div className="hero-context" aria-hidden="true">
+        <span>SumateRD</span>
+        <span>República Dominicana</span>
+      </div>
       <div className="hero-content">
-        <p className="eyebrow">En portada</p>
+        <p className="eyebrow">
+          <i /> En portada
+        </p>
         <h1>{panel.title}</h1>
         <p>{panel.message}</p>
         {panel.buttonText && panel.buttonUrl && (
-          <a className="button light" href={panel.buttonUrl}>
+          <Link className="button light" to={panel.buttonUrl}>
             {panel.buttonText}
-          </a>
+            <ArrowRight aria-hidden="true" />
+          </Link>
         )}
       </div>
       {panels.length > 1 && (
@@ -118,6 +125,11 @@ export function HomePage() {
   }, [])
   const main = articles.find((a) => a.featured) || articles[0]
   const rest = articles.filter((a) => a.id !== main?.id)
+  const categoryDetails: Record<string, string> = {
+    opinion: 'Un foro abierto para conversar con respeto.',
+    sociedad: 'Historias sobre comunidades y vida cotidiana.',
+    cambio: 'Ideas y participación para construir una nueva opción.',
+  }
   return (
     <>
       <Helmet>
@@ -138,30 +150,46 @@ export function HomePage() {
               </div>
             )}
             <HeroCarousel panels={panels} />
+            <section className="home-editorial-intro" aria-label="Propósito de SumateRD">
+              <div>
+                <p className="eyebrow">Un país en conversación</p>
+                <h2>Información para comprender. Espacios para participar.</h2>
+              </div>
+              <p>
+                SumateRD conecta ideas, historias y voces dominicanas en una experiencia clara,
+                cercana y abierta a la ciudadanía.
+              </p>
+            </section>
             {main ? (
-              <section className="lead-grid" aria-labelledby="destacado">
-                <article className="lead-story">
-                  {main.coverImage && (
-                    <Link to={`/articulo/${main.slug}`}>
-                      <img
-                        src={main.coverImage}
-                        alt={main.coverImageAlt}
-                        width="1100"
-                        height="700"
-                      />
-                    </Link>
-                  )}
-                  <CategoryBadge category={main.category} />
-                  <h2 id="destacado">
-                    <Link to={`/articulo/${main.slug}`}>{main.title}</Link>
-                  </h2>
-                  <p>{main.summary}</p>
-                  <ArticleMeta article={main} />
-                </article>
-                <div className="secondary-stories">
-                  {rest.slice(0, 2).map((a) => (
-                    <ArticleCard article={a} compact key={a.id} />
-                  ))}
+              <section className="featured-block" aria-labelledby="destacado">
+                <div className="home-section-label">
+                  <span>Selección editorial</span>
+                  <small>Lecturas destacadas</small>
+                </div>
+                <div className="lead-grid">
+                  <article className="lead-story">
+                    {main.coverImage && (
+                      <Link to={`/articulo/${main.slug}`}>
+                        <img
+                          src={main.coverImage}
+                          alt={main.coverImageAlt}
+                          width="1100"
+                          height="700"
+                        />
+                      </Link>
+                    )}
+                    <CategoryBadge category={main.category} />
+                    <h2 id="destacado">
+                      <Link to={`/articulo/${main.slug}`}>{main.title}</Link>
+                    </h2>
+                    <p>{main.summary}</p>
+                    <ArticleMeta article={main} />
+                  </article>
+                  <div className="secondary-stories">
+                    {rest.slice(0, 2).map((a) => (
+                      <ArticleCard article={a} compact key={a.id} />
+                    ))}
+                  </div>
                 </div>
               </section>
             ) : null}
@@ -183,10 +211,28 @@ export function HomePage() {
               <div>
                 {CATEGORIES.map((c) => (
                   <Link key={c.slug} to={`/categoria/${c.slug}`}>
-                    {c.name}
-                    <span>Ver publicaciones</span>
+                    <div>
+                      <strong>{c.name}</strong>
+                      <ArrowUpRight aria-hidden="true" />
+                    </div>
+                    <span>{categoryDetails[c.slug]}</span>
                   </Link>
                 ))}
+              </div>
+            </section>
+            <section className="home-participation-cta">
+              <div>
+                <p className="eyebrow">Tu voz cuenta</p>
+                <h2>La conversación también comienza contigo.</h2>
+                <p>Comparte una idea en el foro o conoce cómo participar en Proyecto Cambio.</p>
+              </div>
+              <div>
+                <Link className="button light" to="/categoria/opinion">
+                  <MessageCircle aria-hidden="true" /> Participar en el foro
+                </Link>
+                <Link className="button cta-outline" to="/categoria/cambio">
+                  Conocer Proyecto Cambio <ArrowRight aria-hidden="true" />
+                </Link>
               </div>
             </section>
           </>

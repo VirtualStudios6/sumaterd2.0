@@ -52,6 +52,13 @@ describe('Functions de identidad', () => {
     expect(
       (await callable<{ valid: boolean }>('verifyCedula', { cedula }, auth.idToken)).valid,
     ).toBe(true)
+    const existing = await callable<{ registered: boolean; cedulaMasked: string }>(
+      'registerOwnCedula',
+      { cedula },
+      auth.idToken,
+    )
+    expect(existing.registered).toBe(false)
+    expect(existing.cedulaMasked).toMatch(/^\*{3}-\*{7}-\d$/)
     expect(
       (await callable<{ valid: boolean }>('verifyCedula', { cedula: '00113918295' }, auth.idToken))
         .valid,

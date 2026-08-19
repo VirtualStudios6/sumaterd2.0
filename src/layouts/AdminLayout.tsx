@@ -13,6 +13,7 @@ import {
 import { useState } from 'react'
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
+import { PageTransitionSplash } from '../components/PageTransitionSplash'
 import { Spinner } from '../components/Ui'
 import { useAdmin } from '../features/admin/AdminProvider'
 
@@ -85,6 +86,7 @@ export function AdminLayout() {
         </div>
         <Outlet />
       </main>
+      <PageTransitionSplash />
     </div>
   )
 }

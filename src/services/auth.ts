@@ -115,6 +115,14 @@ export async function updateProfileDetails(
     await updateAuthProfile(auth.currentUser, { displayName: fullName })
   }
 }
+export async function registerProfileCedula(cedula: string) {
+  const call = httpsCallable<{ cedula: string }, { registered: boolean; cedulaMasked: string }>(
+    functions,
+    'registerOwnCedula',
+  )
+  const result = await call({ cedula: normalizeCedula(cedula) })
+  return result.data
+}
 export async function changePassword(currentPassword: string, nextPassword: string) {
   const user = auth.currentUser
   if (!user?.email) throw new Error('Debes iniciar sesión nuevamente.')

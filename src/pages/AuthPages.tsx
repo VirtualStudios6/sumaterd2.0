@@ -22,6 +22,7 @@ import {
   getProfile,
   loginUser,
   logoutUser,
+  registerProfileCedula,
   registerUser,
   resetPassword,
   signInWithGoogle,
@@ -353,6 +354,7 @@ export function ProfilePage() {
   const { user, loading: authLoading } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
+  const [profileCedula, setProfileCedula] = useState('')
   const [details, setDetails] = useState({
     fullName: '',
     phone: '',
@@ -365,6 +367,7 @@ export function ProfilePage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [savingCedula, setSavingCedula] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const hasPassword = user?.providerData.some((provider) => provider.providerId === 'password')
   useEffect(() => {
@@ -407,6 +410,29 @@ export function ProfilePage() {
       setSaving(false)
     }
   }
+  const saveCedula = async () => {
+    if (!isValidCedula(profileCedula)) {
+      setError('Introduce una cédula dominicana válida.')
+      return
+    }
+    setError('')
+    setMessage('')
+    setSavingCedula(true)
+    try {
+      const identity = await registerProfileCedula(profileCedula)
+      setProfile((currentProfile) =>
+        currentProfile
+          ? { ...currentProfile, cedulaMasked: identity.cedulaMasked }
+          : currentProfile,
+      )
+      setProfileCedula('')
+      setMessage('Tu cédula fue validada y protegida correctamente.')
+    } catch {
+      setError('No pudimos registrar esta cédula. Verifica que sea correcta y no esté en uso.')
+    } finally {
+      setSavingCedula(false)
+    }
+  }
   const savePassword = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
@@ -438,15 +464,17 @@ export function ProfilePage() {
     .join('')
     .toUpperCase()
   const providerLabel = hasPassword ? 'Correo y contraseña' : 'Google'
+  const hasCedula = profile?.cedulaMasked !== 'No registrada (Google)'
   const completedFields = [
     details.fullName,
     user.email,
+    hasCedula ? profile?.cedulaMasked : '',
     details.phone,
     details.province,
     details.municipality,
     details.bio,
   ].filter(Boolean).length
-  const completion = Math.round((completedFields / 6) * 100)
+  const completion = Math.round((completedFields / 7) * 100)
   return (
     <div className="container page profile-page">
       <Helmet>
@@ -524,6 +552,42 @@ export function ProfilePage() {
                       minLength={3}
                       maxLength={100}
                     />
+                  </label>
+                  <label>
+                    Cédula dominicana
+                    {hasCedula ? (
+                      <>
+                        <input
+                          value={profile.cedulaMasked}
+                          disabled
+                          aria-label="Cédula registrada"
+                        />
+                        <small className="field-help">
+                          Protegida y no modificable desde el perfil.
+                        </small>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          value={profileCedula}
+                          onChange={(e) => setProfileCedula(formatCedula(e.target.value))}
+                          inputMode="numeric"
+                          autoComplete="off"
+                          placeholder="000-0000000-0"
+                        />
+                        <small className="field-help">
+                          Se validará y almacenará únicamente de forma protegida.
+                        </small>
+                        <button
+                          className="cedula-register-button"
+                          type="button"
+                          disabled={savingCedula}
+                          onClick={() => void saveCedula()}
+                        >
+                          {savingCedula ? 'Validando…' : 'Validar y proteger cédula'}
+                        </button>
+                      </>
+                    )}
                   </label>
                   <label>
                     Teléfono
