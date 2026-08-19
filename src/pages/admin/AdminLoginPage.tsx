@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { ErrorState } from '../../components/Ui'
 import { Brand } from '../../components/Brand'
+import { GoogleAuthButton } from '../../components/GoogleAuthButton'
+import { ErrorState } from '../../components/Ui'
 import { useAdmin } from '../../features/admin/AdminProvider'
 export function AdminLoginPage() {
-  const { authenticated, loading, login } = useAdmin()
+  const { authenticated, loading, login, loginWithGoogle } = useAdmin()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,6 +25,18 @@ export function AdminLoginPage() {
       )
     }
   }
+  const submitGoogle = async () => {
+    setError('')
+    try {
+      if (await loginWithGoogle()) navigate('/admin')
+    } catch (reason) {
+      setError(
+        reason instanceof Error && reason.message
+          ? reason.message
+          : 'No pudimos verificar esta cuenta de Google.',
+      )
+    }
+  }
   return (
     <div className="admin-login">
       <div>
@@ -33,6 +46,14 @@ export function AdminLoginPage() {
         <p>Acceso protegido con Firebase Authentication y permisos administrativos.</p>
         <form className="form" onSubmit={submit}>
           {error && <ErrorState message={error} />}
+          <GoogleAuthButton
+            loading={loading}
+            onClick={submitGoogle}
+            label="Entrar al panel con Google"
+          />
+          <div className="auth-divider">
+            <span>o usa tu contraseña</span>
+          </div>
           <label>
             Correo administrativo
             <input

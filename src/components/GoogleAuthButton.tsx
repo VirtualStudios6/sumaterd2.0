@@ -1,0 +1,38 @@
+export function GoogleAuthButton({
+  loading,
+  onClick,
+  label = 'Continuar con Google',
+}: {
+  loading: boolean
+  onClick: () => Promise<void>
+  label?: string
+}) {
+  return (
+    <button
+      className="google-auth-button"
+      type="button"
+      disabled={loading}
+      onClick={() => void onClick()}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="#4285f4"
+          d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.55h3.24c1.9-1.75 2.98-4.32 2.98-7.42Z"
+        />
+        <path
+          fill="#34a853"
+          d="M12 22c2.7 0 4.98-.9 6.63-2.35l-3.24-2.55c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.77-5.61-4.14H3.04v2.63A10 10 0 0 0 12 22Z"
+        />
+        <path
+          fill="#fbbc05"
+          d="M6.39 13.92A6 6 0 0 1 6.08 12c0-.67.11-1.32.31-1.92V7.45H3.04A10 10 0 0 0 2 12c0 1.64.39 3.19 1.04 4.55l3.35-2.63Z"
+        />
+        <path
+          fill="#ea4335"
+          d="M12 5.94c1.47 0 2.79.51 3.82 1.5l2.88-2.88A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.45l3.35 2.63C7.18 7.71 9.39 5.94 12 5.94Z"
+        />
+      </svg>
+      {loading ? 'Conectando con Google…' : label}
+    </button>
+  )
+}

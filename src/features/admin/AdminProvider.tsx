@@ -1,7 +1,9 @@
 import {
   getIdTokenResult,
+  GoogleAuthProvider,
   onIdTokenChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   type User,
 } from 'firebase/auth'
@@ -13,9 +15,20 @@ interface AdminState {
   loading: boolean
   user: User | null
   login: (email: string, password: string) => Promise<void>
+  loginWithGoogle: () => Promise<boolean>
   logout: () => Promise<void>
 }
 const AdminContext = createContext<AdminState | null>(null)
+const googleProvider = new GoogleAuthProvider()
+googleProvider.setCustomParameters({ prompt: 'select_account' })
+
+async function verifyAdmin(user: User) {
+  const token = await getIdTokenResult(user, true)
+  if (token.claims.admin !== true) {
+    await signOut(auth)
+    throw new Error('Esta cuenta de Google no tiene permisos administrativos.')
+  }
+}
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [authenticated, setAuthenticated] = useState(false)
@@ -57,13 +70,34 @@ export function AdminProvider({ children }: { children: ReactNode }) {
             email.trim().toLowerCase(),
             password,
           )
-          const token = await getIdTokenResult(credential.user, true)
-          if (token.claims.admin !== true) {
-            await signOut(auth)
-            throw new Error('Esta cuenta no tiene permisos administrativos.')
-          }
+          await verifyAdmin(credential.user)
           setUser(credential.user)
           setAuthenticated(true)
+        } finally {
+          setLoading(false)
+        }
+      },
+      async loginWithGoogle() {
+        setLoading(true)
+        try {
+          const credential = await signInWithPopup(auth, googleProvider)
+          await verifyAdmin(credential.user)
+          setUser(credential.user)
+          setAuthenticated(true)
+          return true
+        } catch (error) {
+          const code =
+            typeof error === 'object' && error && 'code' in error ? String(error.code) : ''
+          if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+            return false
+          }
+          if (code === 'auth/account-exists-with-different-credential') {
+            throw new Error('Esta cuenta ya existe con otro método de acceso.')
+          }
+          if (error instanceof Error && error.message.includes('permisos administrativos')) {
+            throw error
+          }
+          throw new Error('No pudimos verificar esta cuenta de Google. Intenta nuevamente.')
         } finally {
           setLoading(false)
         }
