@@ -29,7 +29,7 @@ async function signIn(email: string, password: string) {
 }
 
 describe('Functions de identidad', () => {
-  it('registra, reserva una cédula única y verifica el login sin filtrar datos', async () => {
+  it('registra, reserva una cédula única y verifica el login', async () => {
     const email = `lectora-${Date.now()}@example.test`
     const password = 'Clave-segura-2026'
     const cedula = '00113918296'

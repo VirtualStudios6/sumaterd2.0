@@ -89,7 +89,7 @@ Antes de conectar un proyecto real:
 2. Habilita Authentication > Email/Password.
 3. Configura los dominios autorizados para `sumaterd.com` y los entornos usados.
 4. Crea Firestore y Storage en una región adecuada.
-5. Configura el secreto `CEDULA_HASH_SECRET` para Functions y `SITE_URL=https://sumaterd.com`. Debe ser estable, aleatorio y privado; cambiarlo invalida las búsquedas de reservas existentes.
+5. Configura `SITE_URL=https://sumaterd.com` para Functions.
 6. Despliega índices, reglas y Functions con Firebase CLI.
 7. Configura plantillas de correo y remitente de Firebase Auth.
 8. Activa App Check y cambia `enforceAppCheck` a `true` en las Functions públicas después de verificar clientes legítimos.
@@ -107,7 +107,7 @@ No uses una cuenta de servicio en el frontend ni la incluyas en Git.
 
 ## Cédula dominicana
 
-El cliente normaliza, da formato y valida el dígito verificador para feedback inmediato. La Function repite la validación, genera un SHA-256 determinista con `CEDULA_HASH_SECRET` y reserva `cedulaReservations/{hash}` dentro de una transacción. El perfil solo almacena `***-*******-N`; la asociación privada vive en `userPrivate/{uid}`. Ambas colecciones están bloqueadas por reglas.
+El cliente normaliza, da formato y valida el dígito verificador para feedback inmediato. La Function repite la validación y reserva `cedulaReservations/{cedula}` dentro de una transacción. La cédula completa queda en `userPrivate/{uid}.cedula`, visible para el propietario del proyecto desde Firebase Console. El perfil público solo almacena `***-*******-N`; ambas colecciones privadas continúan bloqueadas por reglas para los clientes web.
 
 El registro crea primero la identidad Auth y ejecuta la reserva/perfil en una transacción. Si la reserva falla, elimina la identidad recién creada. El login autentica email/password, verifica la cédula en una Function autenticada y cierra inmediatamente la sesión si no coincide.
 

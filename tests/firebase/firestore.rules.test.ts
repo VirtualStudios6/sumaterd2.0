@@ -51,7 +51,7 @@ beforeEach(async () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     })
-    await setDoc(doc(db, 'cedulaReservations/hash'), { uid: 'alice' })
+    await setDoc(doc(db, 'cedulaReservations/00113918296'), { uid: 'alice' })
     await setDoc(doc(db, 'changeInterests/hash'), { email: 'private@example.test' })
     await setDoc(doc(db, 'carousel/panel'), { active: true, title: 'Panel' })
   })
@@ -63,7 +63,7 @@ describe('reglas Firestore', () => {
     const db = env.unauthenticatedContext().firestore()
     await assertSucceeds(getDoc(doc(db, 'articles/published')))
     await assertFails(getDoc(doc(db, 'articles/draft')))
-    await assertFails(getDoc(doc(db, 'cedulaReservations/hash')))
+    await assertFails(getDoc(doc(db, 'cedulaReservations/00113918296')))
     await assertFails(getDoc(doc(db, 'changeInterests/hash')))
   })
   it('visitante no edita artículos ni carrusel', async () => {

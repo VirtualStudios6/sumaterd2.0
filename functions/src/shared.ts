@@ -27,13 +27,6 @@ export async function assertAdmin(request: CallableRequest) {
 export function cleanText(value: unknown, max = 500): string {
   return typeof value === 'string' ? value.trim().slice(0, max) : ''
 }
-export function hashCedula(value: string): string {
-  const secret =
-    process.env.CEDULA_HASH_SECRET ||
-    (process.env.FUNCTIONS_EMULATOR === 'true' ? 'local-emulator-only' : '')
-  if (!secret) throw new HttpsError('failed-precondition', 'Configuración de identidad incompleta.')
-  return createHash('sha256').update(`${secret}:${value}`).digest('hex')
-}
 export function hashPublicIdentifier(value: string): string {
   return createHash('sha256').update(value.trim().toLowerCase()).digest('hex')
 }

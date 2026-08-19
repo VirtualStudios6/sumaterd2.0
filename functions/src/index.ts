@@ -1,5 +1,4 @@
 import { logger } from 'firebase-functions'
-import { defineSecret } from 'firebase-functions/params'
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https'
 import {
   assertAdmin,
@@ -8,7 +7,6 @@ import {
   cleanText,
   db,
   FieldValue,
-  hashCedula,
   hashPublicIdentifier,
   normalizeCedula,
   randomUUID,
@@ -17,55 +15,49 @@ import {
 } from './shared.js'
 
 const changeParticipationOptions = new Set(['ideas', 'volunteer', 'organizer', 'information'])
-const cedulaHashSecret = defineSecret('CEDULA_HASH_SECRET')
-
-export const registerUser = onCall(
-  { cors: true, enforceAppCheck: false, secrets: [cedulaHashSecret] },
-  async (request) => {
-    const fullName = cleanText(request.data?.fullName, 100)
-    const email = cleanText(request.data?.email, 254).toLowerCase()
-    const password = String(request.data?.password || '')
-    const cedula = normalizeCedula(request.data?.cedula)
-    if (
-      fullName.length < 3 ||
-      !/^\S+@\S+\.\S+$/.test(email) ||
-      password.length < 8 ||
-      !validCedula(cedula)
-    )
-      throw new HttpsError('invalid-argument', 'No pudimos completar el registro.')
-    const cedulaHash = hashCedula(cedula)
-    let user
-    try {
-      user = await adminAuth.createUser({ email, password, displayName: fullName })
-      await db.runTransaction(async (tx) => {
-        const reservationRef = db.doc(`cedulaReservations/${cedulaHash}`)
-        const reservation = await tx.get(reservationRef)
-        if (reservation.exists)
-          throw new HttpsError('already-exists', 'No pudimos completar el registro.')
-        const now = FieldValue.serverTimestamp()
-        tx.create(reservationRef, { uid: user!.uid, createdAt: now })
-        tx.create(db.doc(`userPrivate/${user!.uid}`), { cedulaHash, createdAt: now })
-        tx.create(db.doc(`users/${user!.uid}`), {
-          uid: user!.uid,
-          fullName,
-          email,
-          cedulaMasked: `***-*******-${cedula[10]}`,
-          status: 'active',
-          createdAt: now,
-          updatedAt: now,
-        })
+export const registerUser = onCall({ cors: true, enforceAppCheck: false }, async (request) => {
+  const fullName = cleanText(request.data?.fullName, 100)
+  const email = cleanText(request.data?.email, 254).toLowerCase()
+  const password = String(request.data?.password || '')
+  const cedula = normalizeCedula(request.data?.cedula)
+  if (
+    fullName.length < 3 ||
+    !/^\S+@\S+\.\S+$/.test(email) ||
+    password.length < 8 ||
+    !validCedula(cedula)
+  )
+    throw new HttpsError('invalid-argument', 'No pudimos completar el registro.')
+  let user
+  try {
+    user = await adminAuth.createUser({ email, password, displayName: fullName })
+    await db.runTransaction(async (tx) => {
+      const reservationRef = db.doc(`cedulaReservations/${cedula}`)
+      const reservation = await tx.get(reservationRef)
+      if (reservation.exists)
+        throw new HttpsError('already-exists', 'No pudimos completar el registro.')
+      const now = FieldValue.serverTimestamp()
+      tx.create(reservationRef, { uid: user!.uid, createdAt: now })
+      tx.create(db.doc(`userPrivate/${user!.uid}`), { cedula, createdAt: now })
+      tx.create(db.doc(`users/${user!.uid}`), {
+        uid: user!.uid,
+        fullName,
+        email,
+        cedulaMasked: `***-*******-${cedula[10]}`,
+        status: 'active',
+        createdAt: now,
+        updatedAt: now,
       })
-      return { uid: user.uid }
-    } catch (error) {
-      if (user) await adminAuth.deleteUser(user.uid).catch(() => undefined)
-      logger.warn('Registro rechazado', {
-        code: error instanceof HttpsError ? error.code : 'internal',
-      })
-      if (error instanceof HttpsError) throw error
-      throw new HttpsError('already-exists', 'No pudimos completar el registro.')
-    }
-  },
-)
+    })
+    return { uid: user.uid }
+  } catch (error) {
+    if (user) await adminAuth.deleteUser(user.uid).catch(() => undefined)
+    logger.warn('Registro rechazado', {
+      code: error instanceof HttpsError ? error.code : 'internal',
+    })
+    if (error instanceof HttpsError) throw error
+    throw new HttpsError('already-exists', 'No pudimos completar el registro.')
+  }
+})
 
 export const registerChangeInterest = onCall(
   { cors: true, enforceAppCheck: false },
@@ -123,48 +115,44 @@ export const registerChangeInterest = onCall(
   },
 )
 
-export const verifyCedula = onCall({ cors: true, secrets: [cedulaHashSecret] }, async (request) => {
+export const verifyCedula = onCall({ cors: true }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'No autorizado.')
   const cedula = normalizeCedula(request.data?.cedula)
   if (!validCedula(cedula)) return { valid: false }
-  const snap = await db.doc(`cedulaReservations/${hashCedula(cedula)}`).get()
+  const snap = await db.doc(`cedulaReservations/${cedula}`).get()
   return { valid: snap.exists && snap.get('uid') === request.auth.uid }
 })
 
-export const registerOwnCedula = onCall(
-  { cors: true, secrets: [cedulaHashSecret] },
-  async (request) => {
-    if (!request.auth) throw new HttpsError('unauthenticated', 'No autorizado.')
-    const uid = request.auth.uid
-    const cedula = normalizeCedula(request.data?.cedula)
-    if (!validCedula(cedula)) throw new HttpsError('invalid-argument', 'La cédula no es válida.')
+export const registerOwnCedula = onCall({ cors: true }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'No autorizado.')
+  const uid = request.auth.uid
+  const cedula = normalizeCedula(request.data?.cedula)
+  if (!validCedula(cedula)) throw new HttpsError('invalid-argument', 'La cédula no es válida.')
 
-    const cedulaHash = hashCedula(cedula)
-    const masked = `***-*******-${cedula[10]}`
-    return db.runTransaction(async (tx) => {
-      const privateRef = db.doc(`userPrivate/${uid}`)
-      const profileRef = db.doc(`users/${uid}`)
-      const reservationRef = db.doc(`cedulaReservations/${cedulaHash}`)
-      const [privateSnap, profileSnap, reservationSnap] = await Promise.all([
-        tx.get(privateRef),
-        tx.get(profileRef),
-        tx.get(reservationRef),
-      ])
-      if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Perfil no disponible.')
-      if (privateSnap.exists) {
-        return { registered: false, cedulaMasked: String(profileSnap.get('cedulaMasked') || '') }
-      }
-      if (reservationSnap.exists)
-        throw new HttpsError('already-exists', 'No pudimos registrar esta cédula.')
+  const masked = `***-*******-${cedula[10]}`
+  return db.runTransaction(async (tx) => {
+    const privateRef = db.doc(`userPrivate/${uid}`)
+    const profileRef = db.doc(`users/${uid}`)
+    const reservationRef = db.doc(`cedulaReservations/${cedula}`)
+    const [privateSnap, profileSnap, reservationSnap] = await Promise.all([
+      tx.get(privateRef),
+      tx.get(profileRef),
+      tx.get(reservationRef),
+    ])
+    if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Perfil no disponible.')
+    if (privateSnap.exists) {
+      return { registered: false, cedulaMasked: String(profileSnap.get('cedulaMasked') || '') }
+    }
+    if (reservationSnap.exists)
+      throw new HttpsError('already-exists', 'No pudimos registrar esta cédula.')
 
-      const now = FieldValue.serverTimestamp()
-      tx.create(reservationRef, { uid, createdAt: now })
-      tx.create(privateRef, { cedulaHash, createdAt: now })
-      tx.update(profileRef, { cedulaMasked: masked, updatedAt: now })
-      return { registered: true, cedulaMasked: masked }
-    })
-  },
-)
+    const now = FieldValue.serverTimestamp()
+    tx.create(reservationRef, { uid, createdAt: now })
+    tx.create(privateRef, { cedula, createdAt: now })
+    tx.update(profileRef, { cedulaMasked: masked, updatedAt: now })
+    return { registered: true, cedulaMasked: masked }
+  })
+})
 
 export const deleteOwnAccount = onCall({ cors: true }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'No autorizado.')
@@ -172,7 +160,10 @@ export const deleteOwnAccount = onCall({ cors: true }, async (request) => {
   const privateRef = db.doc(`userPrivate/${uid}`)
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(privateRef)
-    if (snap.exists) tx.delete(db.doc(`cedulaReservations/${snap.get('cedulaHash')}`))
+    if (snap.exists) {
+      const cedula = cleanText(snap.get('cedula'), 11)
+      if (cedula) tx.delete(db.doc(`cedulaReservations/${cedula}`))
+    }
     tx.delete(privateRef)
     tx.delete(db.doc(`users/${uid}`))
   })
@@ -444,8 +435,8 @@ export const adminUsers = onCall({ cors: true }, async (request) => {
     await db.runTransaction(async (tx) => {
       const privateSnap = await tx.get(privateRef)
       if (privateSnap.exists) {
-        const cedulaHash = cleanText(privateSnap.get('cedulaHash'), 128)
-        if (cedulaHash) tx.delete(db.doc(`cedulaReservations/${cedulaHash}`))
+        const cedula = cleanText(privateSnap.get('cedula'), 11)
+        if (cedula) tx.delete(db.doc(`cedulaReservations/${cedula}`))
       }
       tx.delete(privateRef)
       tx.delete(db.doc(`users/${uid}`))
