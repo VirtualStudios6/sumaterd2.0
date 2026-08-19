@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ShieldCheck } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 
 export function PageTransitionSplash() {
@@ -10,8 +11,8 @@ export function PageTransitionSplash() {
     const reducedMotion =
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const leaveTimer = window.setTimeout(() => setPhase('leaving'), reducedMotion ? 80 : 360)
-    const hideTimer = window.setTimeout(() => setPhase('hidden'), reducedMotion ? 120 : 570)
+    const leaveTimer = window.setTimeout(() => setPhase('leaving'), reducedMotion ? 100 : 850)
+    const hideTimer = window.setTimeout(() => setPhase('hidden'), reducedMotion ? 160 : 1080)
     return () => {
       window.clearTimeout(leaveTimer)
       window.clearTimeout(hideTimer)
@@ -26,12 +27,19 @@ export function PageTransitionSplash() {
       aria-live="polite"
       aria-label="Cargando página"
     >
-      <div className="page-transition-mark" aria-hidden="true">
-        <span>Súmate</span>
-        <strong>RD</strong>
-        <i />
+      <div className="page-transition-content" aria-hidden="true">
+        <div className="page-transition-security">
+          <ShieldCheck />
+          <span>Conexión protegida</span>
+        </div>
+        <div className="page-transition-mark">
+          <span>Súmate</span>
+          <strong>RD</strong>
+          <i />
+        </div>
+        <p>Cargando contenido de forma segura…</p>
       </div>
-      <span className="sr-only">Cargando página</span>
+      <span className="sr-only">Conexión protegida. Cargando página.</span>
     </div>
   )
 }

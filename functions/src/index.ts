@@ -181,7 +181,7 @@ export const deleteOwnAccount = onCall({ cors: true }, async (request) => {
 })
 
 export const adminArticles = onCall({ cors: true }, async (request) => {
-  assertAdmin(request)
+  await assertAdmin(request)
   const action = request.data?.action
   if (action === 'list') {
     let q: FirebaseFirestore.Query = db
@@ -262,7 +262,7 @@ export const adminArticles = onCall({ cors: true }, async (request) => {
 })
 
 export const adminCarousel = onCall({ cors: true }, async (request) => {
-  assertAdmin(request)
+  await assertAdmin(request)
   const action = request.data?.action
   if (action === 'list') {
     const snap = await db.collection('carousel').orderBy('order').get()
@@ -316,7 +316,7 @@ export const adminCarousel = onCall({ cors: true }, async (request) => {
 export const adminUploadImage = onCall(
   { cors: true, timeoutSeconds: 60, memory: '512MiB' },
   async (request) => {
-    assertAdmin(request)
+    await assertAdmin(request)
     const contentType = cleanText(request.data?.contentType, 50)
     const area = request.data?.area === 'carousel' ? 'carousel' : 'articles'
     const ownerId = cleanText(request.data?.ownerId, 100).replace(/[^a-zA-Z0-9_-]/g, '')
@@ -352,7 +352,7 @@ export const adminUploadImage = onCall(
 )
 
 export const adminDeleteImage = onCall({ cors: true }, async (request) => {
-  assertAdmin(request)
+  await assertAdmin(request)
   const area = request.data?.area === 'carousel' ? 'carousel' : 'articles'
   const ownerId = cleanText(request.data?.ownerId, 100).replace(/[^a-zA-Z0-9_-]/g, '')
   const kind = cleanText(request.data?.kind, 30).replace(/[^a-zA-Z0-9_-]/g, '') || 'cover'
@@ -362,7 +362,7 @@ export const adminDeleteImage = onCall({ cors: true }, async (request) => {
 })
 
 export const adminSettings = onCall({ cors: true }, async (request) => {
-  assertAdmin(request)
+  await assertAdmin(request)
   const ref = db.doc('settings/public')
   if (request.data?.action === 'get') {
     const snap = await ref.get()
@@ -387,7 +387,7 @@ export const adminSettings = onCall({ cors: true }, async (request) => {
   throw new HttpsError('invalid-argument', 'Acción inválida.')
 })
 export const adminStats = onCall({ cors: true }, async (request) => {
-  assertAdmin(request)
+  await assertAdmin(request)
   const [all, published, drafts, panels, users, forumPosts, changeInterests] = await Promise.all([
     db.collection('articles').count().get(),
     db.collection('articles').where('status', '==', 'published').count().get(),
@@ -409,7 +409,7 @@ export const adminStats = onCall({ cors: true }, async (request) => {
 })
 
 export const adminUsers = onCall({ cors: true }, async (request) => {
-  assertAdmin(request)
+  await assertAdmin(request)
   const action = request.data?.action
   if (action === 'list') {
     const snap = await db.collection('users').orderBy('createdAt', 'desc').limit(250).get()
@@ -459,7 +459,7 @@ export const adminUsers = onCall({ cors: true }, async (request) => {
 })
 
 export const adminForum = onCall({ cors: true }, async (request) => {
-  assertAdmin(request)
+  await assertAdmin(request)
   const action = request.data?.action
   if (action === 'list') {
     const snap = await db.collection('forumPosts').orderBy('createdAt', 'desc').limit(200).get()
@@ -508,7 +508,7 @@ export const adminForum = onCall({ cors: true }, async (request) => {
 })
 
 export const adminChangeInterests = onCall({ cors: true }, async (request) => {
-  assertAdmin(request)
+  await assertAdmin(request)
   const action = request.data?.action
   if (action === 'list') {
     const snap = await db

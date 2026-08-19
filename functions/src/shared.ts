@@ -16,9 +16,12 @@ export const db = getFirestore()
 export const bucket = getStorage().bucket()
 export { FieldValue, Timestamp, randomUUID }
 
-export function assertAdmin(request: CallableRequest) {
+export async function assertAdmin(request: CallableRequest) {
   const emulator = process.env.FUNCTIONS_EMULATOR === 'true'
-  if (!emulator && request.auth?.token.admin !== true)
+  if (emulator || request.auth?.token.admin === true) return
+  if (!request.auth) throw new HttpsError('permission-denied', 'Acceso no autorizado.')
+  const profile = await db.doc(`users/${request.auth.uid}`).get()
+  if (profile.get('isAdmin') !== true)
     throw new HttpsError('permission-denied', 'Acceso no autorizado.')
 }
 export function cleanText(value: unknown, max = 500): string {

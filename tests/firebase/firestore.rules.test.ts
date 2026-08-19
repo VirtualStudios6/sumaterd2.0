@@ -42,6 +42,15 @@ beforeEach(async () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     })
+    await setDoc(doc(db, 'users/editor'), {
+      uid: 'editor',
+      fullName: 'Editora Principal',
+      email: 'editor@example.com',
+      status: 'active',
+      isAdmin: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
     await setDoc(doc(db, 'cedulaReservations/hash'), { uid: 'alice' })
     await setDoc(doc(db, 'changeInterests/hash'), { email: 'private@example.test' })
     await setDoc(doc(db, 'carousel/panel'), { active: true, title: 'Panel' })
@@ -70,6 +79,7 @@ describe('reglas Firestore', () => {
       updateDoc(doc(db, 'users/alice'), { fullName: 'Alicia Gómez', updatedAt: new Date() }),
     )
     await assertFails(updateDoc(doc(db, 'users/alice'), { status: 'disabled' }))
+    await assertFails(updateDoc(doc(db, 'users/alice'), { isAdmin: true }))
   })
   it('usuario normal no crea artículos', async () => {
     const db = env.authenticatedContext('alice').firestore()
@@ -171,5 +181,10 @@ describe('reglas Firestore', () => {
     await assertSucceeds(setDoc(doc(db, 'articles/new'), { status: 'draft', title: 'Nuevo' }))
     await assertSucceeds(updateDoc(doc(db, 'carousel/panel'), { active: false }))
     await assertFails(getDoc(doc(db, 'changeInterests/hash')))
+  })
+  it('isAdmin en el perfil permite administrar sin poder autoasignarse el permiso', async () => {
+    const db = env.authenticatedContext('editor').firestore()
+    await assertSucceeds(setDoc(doc(db, 'articles/from-profile-admin'), { status: 'draft' }))
+    await assertSucceeds(updateDoc(doc(db, 'carousel/panel'), { active: false }))
   })
 })

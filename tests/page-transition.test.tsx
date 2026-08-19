@@ -14,7 +14,7 @@ describe('PageTransitionSplash', () => {
       </MemoryRouter>,
     )
     expect(screen.getByRole('status', { name: 'Cargando página' })).toBeInTheDocument()
-    act(() => vi.advanceTimersByTime(600))
+    act(() => vi.advanceTimersByTime(1100))
     expect(screen.queryByRole('status', { name: 'Cargando página' })).not.toBeInTheDocument()
   })
 })

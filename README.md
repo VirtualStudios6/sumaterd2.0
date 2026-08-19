@@ -113,7 +113,9 @@ El registro crea primero la identidad Auth y ejecuta la reserva/perfil en una tr
 
 ## Administración
 
-El acceso `/admin/login` usa una cuenta de Firebase Authentication que tenga el custom claim `admin: true`. Una cuenta normal nunca obtiene acceso al panel aunque conozca la ruta.
+El acceso `/admin/login` acepta una cuenta con el custom claim `admin: true` o con `isAdmin: true` en su documento `users/{uid}`. Una cuenta normal nunca obtiene acceso al panel aunque conozca la ruta. Las reglas impiden que un usuario se asigne ese campo desde la web.
+
+La forma sencilla desde Firebase Console es abrir Firestore Database, entrar en `users`, seleccionar el documento cuyo ID coincide con el UID de la cuenta y añadir un campo booleano `isAdmin` con valor `true`. Después, la persona debe cerrar sesión y volver a entrar.
 
 Para autorizar una cuenta existente desde un entorno con credenciales administrativas:
 

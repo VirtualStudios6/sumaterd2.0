@@ -7,8 +7,9 @@ import {
   signOut,
   type User,
 } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { auth } from '../../firebase/client'
+import { auth, db } from '../../firebase/client'
 
 interface AdminState {
   authenticated: boolean
@@ -24,9 +25,11 @@ googleProvider.setCustomParameters({ prompt: 'select_account' })
 
 async function verifyAdmin(user: User) {
   const token = await getIdTokenResult(user, true)
-  if (token.claims.admin !== true) {
+  const profile = token.claims.admin === true ? null : await getDoc(doc(db, 'users', user.uid))
+  const permitted = token.claims.admin === true || profile?.data()?.isAdmin === true
+  if (!permitted) {
     await signOut(auth)
-    throw new Error('Esta cuenta de Google no tiene permisos administrativos.')
+    throw new Error('Esta cuenta no tiene permisos administrativos.')
   }
 }
 
@@ -44,10 +47,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
           return
         }
         try {
-          const token = await getIdTokenResult(nextUser, true)
-          const isAdmin = token.claims.admin === true
-          setUser(isAdmin ? nextUser : null)
-          setAuthenticated(isAdmin)
+          await verifyAdmin(nextUser)
+          setUser(nextUser)
+          setAuthenticated(true)
         } catch {
           setUser(null)
           setAuthenticated(false)

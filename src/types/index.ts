@@ -73,6 +73,7 @@ export interface UserProfile {
   municipality?: string
   bio?: string
   authProvider?: 'google.com' | 'password'
+  isAdmin?: boolean
   status: 'active' | 'disabled'
   createdAt: Timestamp | Date | string | null
   updatedAt: Timestamp | Date | string | null
