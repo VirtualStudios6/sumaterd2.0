@@ -2592,10 +2592,20 @@ main > * {
 .lead-story > a {
   display: block;
   overflow: hidden;
+  border: 1px solid #dfe5eb;
+  background: #eef2f5;
+  box-shadow: 0 8px 24px rgb(22 39 59 / 7%);
+}
+.card-image {
+  border-radius: 12px;
+}
+.lead-story > a {
+  border-radius: 16px;
 }
 .card-image img,
 .lead-story img,
 .hero > img {
+  display: block;
   transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .button,
