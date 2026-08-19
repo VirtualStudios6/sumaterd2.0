@@ -1,87 +1,116 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { Spinner } from '../components/Ui'
+import { PageTransitionSplash } from '../components/PageTransitionSplash'
 import { PublicLayout } from '../layouts/PublicLayout'
 
-const HomePage = lazy(() => import('../pages/HomePage').then((m) => ({ default: m.HomePage })))
-const CategoryPage = lazy(() =>
+const SPLASH_THRESHOLD_MS = 400
+const SPLASH_VISIBLE_MS = 3000
+
+function lazyPage<T extends ComponentType>(loader: () => Promise<{ default: T }>) {
+  return lazy(async () => {
+    const startedAt = Date.now()
+    const loaded = await loader()
+    const elapsed = Date.now() - startedAt
+
+    if (elapsed >= SPLASH_THRESHOLD_MS) {
+      const remainingVisibleTime = SPLASH_THRESHOLD_MS + SPLASH_VISIBLE_MS - elapsed
+      if (remainingVisibleTime > 0) {
+        await new Promise((resolve) => window.setTimeout(resolve, remainingVisibleTime))
+      }
+    }
+
+    return loaded
+  })
+}
+
+function RouteLoadingFallback() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setVisible(true), SPLASH_THRESHOLD_MS)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  return visible ? <PageTransitionSplash /> : null
+}
+
+const HomePage = lazyPage(() => import('../pages/HomePage').then((m) => ({ default: m.HomePage })))
+const CategoryPage = lazyPage(() =>
   import('../pages/CategoryPage').then((m) => ({ default: m.CategoryPage })),
 )
-const ForumPage = lazy(() => import('../pages/ForumPage').then((m) => ({ default: m.ForumPage })))
-const ChangePage = lazy(() =>
+const ForumPage = lazyPage(() =>
+  import('../pages/ForumPage').then((m) => ({ default: m.ForumPage })),
+)
+const ChangePage = lazyPage(() =>
   import('../pages/ChangePage').then((m) => ({ default: m.ChangePage })),
 )
-const ArticlePage = lazy(() =>
+const ArticlePage = lazyPage(() =>
   import('../pages/ArticlePage').then((m) => ({ default: m.ArticlePage })),
 )
-const SearchPage = lazy(() =>
+const SearchPage = lazyPage(() =>
   import('../pages/SearchPage').then((m) => ({ default: m.SearchPage })),
 )
-const LoginPage = lazy(() => import('../pages/AuthPages').then((m) => ({ default: m.LoginPage })))
-const RegisterPage = lazy(() =>
+const LoginPage = lazyPage(() =>
+  import('../pages/AuthPages').then((m) => ({ default: m.LoginPage })),
+)
+const RegisterPage = lazyPage(() =>
   import('../pages/AuthPages').then((m) => ({ default: m.RegisterPage })),
 )
-const ResetPasswordPage = lazy(() =>
+const ResetPasswordPage = lazyPage(() =>
   import('../pages/AuthPages').then((m) => ({ default: m.ResetPasswordPage })),
 )
-const ProfilePage = lazy(() =>
+const ProfilePage = lazyPage(() =>
   import('../pages/AuthPages').then((m) => ({ default: m.ProfilePage })),
 )
-const AboutPage = lazy(() => import('../pages/StaticPages').then((m) => ({ default: m.AboutPage })))
-const PrivacyPage = lazy(() =>
+const AboutPage = lazyPage(() =>
+  import('../pages/StaticPages').then((m) => ({ default: m.AboutPage })),
+)
+const PrivacyPage = lazyPage(() =>
   import('../pages/StaticPages').then((m) => ({ default: m.PrivacyPage })),
 )
-const ContactPage = lazy(() =>
+const ContactPage = lazyPage(() =>
   import('../pages/StaticPages').then((m) => ({ default: m.ContactPage })),
 )
-const NotFoundPage = lazy(() =>
+const NotFoundPage = lazyPage(() =>
   import('../pages/StaticPages').then((m) => ({ default: m.NotFoundPage })),
 )
-const AdminLayout = lazy(() =>
+const AdminLayout = lazyPage(() =>
   import('../layouts/AdminLayout').then((m) => ({ default: m.AdminLayout })),
 )
-const AdminLoginPage = lazy(() =>
+const AdminLoginPage = lazyPage(() =>
   import('../pages/admin/AdminLoginPage').then((m) => ({ default: m.AdminLoginPage })),
 )
-const DashboardPage = lazy(() =>
+const DashboardPage = lazyPage(() =>
   import('../pages/admin/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
-const ArticlesAdminPage = lazy(() =>
+const ArticlesAdminPage = lazyPage(() =>
   import('../pages/admin/ArticlesAdminPage').then((m) => ({ default: m.ArticlesAdminPage })),
 )
-const ArticleEditorPage = lazy(() =>
+const ArticleEditorPage = lazyPage(() =>
   import('../pages/admin/ArticleEditorPage').then((m) => ({ default: m.ArticleEditorPage })),
 )
-const ArticlePreviewPage = lazy(() =>
+const ArticlePreviewPage = lazyPage(() =>
   import('../pages/admin/ArticlePreviewPage').then((m) => ({ default: m.ArticlePreviewPage })),
 )
-const CarouselAdminPage = lazy(() =>
+const CarouselAdminPage = lazyPage(() =>
   import('../pages/admin/CarouselAdminPage').then((m) => ({ default: m.CarouselAdminPage })),
 )
-const SettingsPage = lazy(() =>
+const SettingsPage = lazyPage(() =>
   import('../pages/admin/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 )
-const ForumAdminPage = lazy(() =>
+const ForumAdminPage = lazyPage(() =>
   import('../pages/admin/ForumAdminPage').then((m) => ({ default: m.ForumAdminPage })),
 )
-const UsersAdminPage = lazy(() =>
+const UsersAdminPage = lazyPage(() =>
   import('../pages/admin/UsersAdminPage').then((m) => ({ default: m.UsersAdminPage })),
 )
-const ChangeInterestsAdminPage = lazy(() =>
+const ChangeInterestsAdminPage = lazyPage(() =>
   import('../pages/admin/ChangeInterestsAdminPage').then((m) => ({
     default: m.ChangeInterestsAdminPage,
   })),
 )
 const wait = (node: React.ReactNode) => (
-  <Suspense
-    fallback={
-      <div className="container page">
-        <Spinner />
-      </div>
-    }
-  >
-    {node}
-  </Suspense>
+  <Suspense fallback={<RouteLoadingFallback />}>{node}</Suspense>
 )
 
 export const router = createBrowserRouter([
