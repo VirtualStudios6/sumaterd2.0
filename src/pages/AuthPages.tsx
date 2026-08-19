@@ -12,6 +12,7 @@ import {
   logoutUser,
   registerUser,
   resetPassword,
+  signInWithGoogle,
   updateProfileName,
 } from '../services/auth'
 import type { UserProfile } from '../types'
@@ -55,6 +56,43 @@ function PasswordField({
   )
 }
 
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285f4"
+        d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.55h3.24c1.9-1.75 2.98-4.32 2.98-7.42Z"
+      />
+      <path
+        fill="#34a853"
+        d="M12 22c2.7 0 4.98-.9 6.63-2.35l-3.24-2.55c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.77-5.61-4.14H3.04v2.63A10 10 0 0 0 12 22Z"
+      />
+      <path
+        fill="#fbbc05"
+        d="M6.39 13.92A6 6 0 0 1 6.08 12c0-.67.11-1.32.31-1.92V7.45H3.04A10 10 0 0 0 2 12c0 1.64.39 3.19 1.04 4.55l3.35-2.63Z"
+      />
+      <path
+        fill="#ea4335"
+        d="M12 5.94c1.47 0 2.79.51 3.82 1.5l2.88-2.88A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.45l3.35 2.63C7.18 7.71 9.39 5.94 12 5.94Z"
+      />
+    </svg>
+  )
+}
+
+function GoogleButton({ loading, onClick }: { loading: boolean; onClick: () => Promise<void> }) {
+  return (
+    <button
+      className="google-auth-button"
+      type="button"
+      disabled={loading}
+      onClick={() => void onClick()}
+    >
+      <GoogleIcon />
+      {loading ? 'Conectando con Google…' : 'Continuar con Google'}
+    </button>
+  )
+}
+
 export function LoginPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -81,6 +119,18 @@ export function LoginPage() {
       setLoading(false)
     }
   }
+  const submitGoogle = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const credential = await signInWithGoogle()
+      if (credential) navigate('/perfil')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No pudimos iniciar sesión con Google.')
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <AuthShell title="Iniciar sesión" intro="Accede a tu cuenta de lector.">
       <Helmet>
@@ -88,6 +138,10 @@ export function LoginPage() {
       </Helmet>
       <form className="form" onSubmit={submit}>
         {error && <ErrorState message={error} />}
+        <GoogleButton loading={loading} onClick={submitGoogle} />
+        <div className="auth-divider">
+          <span>o usa tu correo</span>
+        </div>
         <label>
           Cédula
           <input
@@ -154,6 +208,18 @@ export function RegisterPage() {
       setLoading(false)
     }
   }
+  const submitGoogle = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const credential = await signInWithGoogle()
+      if (credential) navigate('/perfil')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No pudimos continuar con Google.')
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <AuthShell title="Crear cuenta" intro="Regístrate para gestionar tu perfil en SumateRD.">
       <Helmet>
@@ -161,6 +227,13 @@ export function RegisterPage() {
       </Helmet>
       <form className="form" onSubmit={submit}>
         {error && <ErrorState message={error} />}
+        <GoogleButton loading={loading} onClick={submitGoogle} />
+        <p className="google-auth-notice">
+          Al continuar con Google aceptas los términos y la política de privacidad.
+        </p>
+        <div className="auth-divider">
+          <span>o crea tu cuenta con correo</span>
+        </div>
         <label>
           Nombre completo
           <input
@@ -274,6 +347,7 @@ export function ProfilePage() {
   const [next, setNext] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const hasPassword = user?.providerData.some((provider) => provider.providerId === 'password')
   useEffect(() => {
     if (user)
       getProfile(user.uid)
@@ -364,24 +438,26 @@ export function ProfilePage() {
             <button className="button">Guardar cambios</button>
           </form>
         </section>
-        <section>
-          <h2>Cambiar contraseña</h2>
-          <form className="form" onSubmit={savePassword}>
-            <PasswordField
-              id="current-password"
-              label="Contraseña actual"
-              value={current}
-              onChange={setCurrent}
-            />
-            <PasswordField
-              id="new-profile-password"
-              label="Nueva contraseña"
-              value={next}
-              onChange={setNext}
-            />
-            <button className="button">Cambiar contraseña</button>
-          </form>
-        </section>
+        {hasPassword && (
+          <section>
+            <h2>Cambiar contraseña</h2>
+            <form className="form" onSubmit={savePassword}>
+              <PasswordField
+                id="current-password"
+                label="Contraseña actual"
+                value={current}
+                onChange={setCurrent}
+              />
+              <PasswordField
+                id="new-profile-password"
+                label="Nueva contraseña"
+                value={next}
+                onChange={setNext}
+              />
+              <button className="button">Cambiar contraseña</button>
+            </form>
+          </section>
+        )}
         <section className="danger-zone">
           <h2>Sesión y cuenta</h2>
           <button className="button secondary" onClick={() => void logoutUser()}>

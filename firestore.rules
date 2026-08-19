@@ -24,7 +24,22 @@ service cloud.firestore {
     }
     match /users/{uid} {
       allow read: if owns(uid) || admin();
-      allow create: if false;
+      allow create: if owns(uid)
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.resource.data.keys().hasOnly([
+          'uid', 'fullName', 'email', 'cedulaMasked', 'status', 'authProvider',
+          'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() >= 3
+        && request.resource.data.fullName.size() <= 100
+        && request.resource.data.cedulaMasked == 'No registrada (Google)'
+        && request.resource.data.status == 'active'
+        && request.resource.data.authProvider == 'google.com'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
       allow update: if owns(uid)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'updatedAt'])
         && request.resource.data.fullName is string

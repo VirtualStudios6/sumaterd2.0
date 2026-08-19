@@ -1,18 +1,22 @@
 import {
   EmailAuthProvider,
+  GoogleAuthProvider,
   reauthenticateWithCredential,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updatePassword,
 } from 'firebase/auth'
-import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { auth, db, functions } from '../firebase/client'
 import { normalizeCedula } from '../utils/cedula'
 import type { UserProfile } from '../types'
 
 const genericError = new Error('Los datos introducidos no son correctos.')
+const googleProvider = new GoogleAuthProvider()
+googleProvider.setCustomParameters({ prompt: 'select_account' })
 
 export async function registerUser(input: {
   fullName: string
@@ -39,6 +43,37 @@ export async function loginUser(email: string, password: string, cedula: string)
   } catch {
     await signOut(auth).catch(() => undefined)
     throw genericError
+  }
+}
+
+export async function signInWithGoogle() {
+  try {
+    const credential = await signInWithPopup(auth, googleProvider)
+    const user = credential.user
+    const profileRef = doc(db, 'users', user.uid)
+    const profile = await getDoc(profileRef)
+    if (!profile.exists()) {
+      const googleName = (user.displayName || '').trim().slice(0, 100)
+      await setDoc(profileRef, {
+        uid: user.uid,
+        fullName: googleName.length >= 3 ? googleName : 'Miembro de SumateRD',
+        email: user.email || '',
+        cedulaMasked: 'No registrada (Google)',
+        status: 'active',
+        authProvider: 'google.com',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+    }
+    return credential
+  } catch (error) {
+    const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : ''
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return null
+    if (code === 'auth/account-exists-with-different-credential') {
+      throw new Error('Este correo ya está registrado. Inicia sesión con tu contraseña.')
+    }
+    await signOut(auth).catch(() => undefined)
+    throw new Error('No pudimos iniciar sesión con Google. Intenta nuevamente.')
   }
 }
 

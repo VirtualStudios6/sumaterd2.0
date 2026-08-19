@@ -75,6 +75,38 @@ describe('reglas Firestore', () => {
     const db = env.authenticatedContext('alice').firestore()
     await assertFails(setDoc(doc(db, 'articles/new'), { status: 'published' }))
   })
+  it('permite crear únicamente el perfil propio al entrar con Google', async () => {
+    const profile = {
+      uid: 'google-user',
+      fullName: 'Persona de Google',
+      email: 'google@example.com',
+      cedulaMasked: 'No registrada (Google)',
+      status: 'active',
+      authProvider: 'google.com',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }
+    const googleDb = env
+      .authenticatedContext('google-user', {
+        email: 'google@example.com',
+        firebase: { sign_in_provider: 'google.com' },
+      })
+      .firestore()
+    await assertSucceeds(setDoc(doc(googleDb, 'users/google-user'), profile))
+    await assertFails(
+      setDoc(doc(googleDb, 'users/another-user'), { ...profile, uid: 'another-user' }),
+    )
+
+    const passwordDb = env
+      .authenticatedContext('password-user', {
+        email: 'google@example.com',
+        firebase: { sign_in_provider: 'password' },
+      })
+      .firestore()
+    await assertFails(
+      setDoc(doc(passwordDb, 'users/password-user'), { ...profile, uid: 'password-user' }),
+    )
+  })
   it('usuario crea temas y respuestas del foro con su propia identidad', async () => {
     const db = env.authenticatedContext('alice').firestore()
     await assertSucceeds(
