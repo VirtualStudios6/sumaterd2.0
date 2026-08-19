@@ -240,7 +240,10 @@ Documentar el proceso y repartir las tareas evita que todo dependa de una sola p
 ]
 
 export const DEMO_ARTICLES = ALL_DEMO_ARTICLES.filter(
-  (article) => article.category === 'opinion' || article.category === 'sociedad',
+  (article) =>
+    article.category === 'opinion' ||
+    article.category === 'sociedad' ||
+    article.category === 'cambio',
 )
 
 export const DEMO_PANELS: CarouselPanel[] = DEMO_ARTICLES.slice(0, 3).map((article, order) => ({

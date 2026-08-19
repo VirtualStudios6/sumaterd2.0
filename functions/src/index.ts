@@ -514,11 +514,12 @@ export const sitemap = onRequest({ cors: true }, async (_request, response) => {
     .where('status', '==', 'published')
     .orderBy('publishedAt', 'desc')
     .get()
-  const fixed = ['', ...['opinion', 'sociedad'].map((c) => `/categoria/${c}`)]
+  const publicCategories = ['opinion', 'sociedad', 'cambio']
+  const fixed = ['', ...publicCategories.map((c) => `/categoria/${c}`)]
   const urls = [
     ...fixed.map((path) => ({ loc: `${site}${path}`, lastmod: '' })),
     ...snap.docs
-      .filter((doc) => ['opinion', 'sociedad'].includes(doc.get('category')))
+      .filter((doc) => publicCategories.includes(doc.get('category')))
       .map((doc) => ({
         loc: `${site}/articulo/${doc.get('slug')}`,
         lastmod: doc.get('updatedAt')?.toDate?.().toISOString() || '',

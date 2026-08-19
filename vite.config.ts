@@ -6,7 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const siteUrl = (env.VITE_SITE_URL || 'http://localhost:5173').replace(/\/$/, '')
-  const categories = ['opinion', 'sociedad']
+  const categories = ['opinion', 'sociedad', 'cambio']
   return {
     build: {
       rollupOptions: {

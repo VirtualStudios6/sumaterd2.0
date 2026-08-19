@@ -19,6 +19,11 @@ export function PrivacyPage() {
         contraseñas en Firestore.
       </p>
       <p>
+        En Proyecto Cambio recopilamos únicamente los datos que la persona envía voluntariamente
+        para conocer su interés, sus ideas y la forma en que desea participar. Esta información es
+        privada y su envío no constituye afiliación formal a un partido político.
+      </p>
+      <p>
         La versión final deberá identificar al responsable del tratamiento, plazos de conservación,
         base jurídica y canales formales para ejercer derechos.
       </p>

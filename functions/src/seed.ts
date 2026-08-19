@@ -9,15 +9,16 @@ if (!process.env.FIRESTORE_EMULATOR_HOST) {
 const categories = [
   ['opinion', 'Opinión'],
   ['sociedad', 'Sociedad'],
+  ['cambio', 'Cambio'],
 ]
 const topics = [
   ['La conversación pendiente sobre nuestros espacios públicos', 'sociedad'],
   ['Barrios que encuentran nuevas formas de organizarse', 'sociedad'],
   ['El valor de escuchar antes de tomar decisiones', 'opinion'],
-  ['Ideas ciudadanas para transformar nuestras comunidades', 'sociedad'],
+  ['Ideas ciudadanas para transformar nuestras comunidades', 'cambio'],
   ['Participación ciudadana más allá de las elecciones', 'opinion'],
   ['La cultura de cuidar lo que compartimos', 'sociedad'],
-  ['Una nueva forma de participar en el futuro del país', 'opinion'],
+  ['Una nueva forma de participar en el futuro del país', 'cambio'],
   ['Una mirada a la movilidad en Santo Domingo', 'sociedad'],
   ['Instituciones cercanas, ciudadanía más fuerte', 'opinion'],
   ['El país que contamos también construye el país', 'opinion'],
@@ -105,4 +106,4 @@ batch.set(db.doc('settings/public'), {
   updatedAt: FieldValue.serverTimestamp(),
 })
 await batch.commit()
-console.log('Seed completado: 2 categorías, 10 artículos y 3 paneles.')
+console.log('Seed completado: 3 categorías, 10 artículos y 3 paneles.')

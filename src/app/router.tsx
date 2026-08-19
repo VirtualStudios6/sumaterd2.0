@@ -8,6 +8,9 @@ const CategoryPage = lazy(() =>
   import('../pages/CategoryPage').then((m) => ({ default: m.CategoryPage })),
 )
 const ForumPage = lazy(() => import('../pages/ForumPage').then((m) => ({ default: m.ForumPage })))
+const ChangePage = lazy(() =>
+  import('../pages/ChangePage').then((m) => ({ default: m.ChangePage })),
+)
 const ArticlePage = lazy(() =>
   import('../pages/ArticlePage').then((m) => ({ default: m.ArticlePage })),
 )
@@ -90,8 +93,8 @@ export const router = createBrowserRouter([
       { path: 'categoria/opinion', element: wait(<ForumPage />) },
       { path: 'categoria/politica', element: <Navigate to="/" replace /> },
       { path: 'categoria/actualidad', element: <Navigate to="/" replace /> },
-      { path: 'categoria/cambio', element: <Navigate to="/" replace /> },
-      { path: 'categoria/economia', element: <Navigate to="/" replace /> },
+      { path: 'categoria/cambio', element: wait(<ChangePage />) },
+      { path: 'categoria/economia', element: <Navigate to="/categoria/cambio" replace /> },
       { path: 'categoria/:slug', element: wait(<CategoryPage />) },
       { path: 'articulo/:slug', element: wait(<ArticlePage />) },
       { path: 'buscar', element: wait(<SearchPage />) },

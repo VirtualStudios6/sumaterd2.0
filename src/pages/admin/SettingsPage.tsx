@@ -8,7 +8,7 @@ const defaults: SiteSettings = {
   contactEmail: '',
   aboutText:
     'SumateRD es un espacio para informar, conversar y construir propuestas para la República Dominicana.',
-  footerText: 'Opinión y sociedad desde República Dominicana.',
+  footerText: 'Opinión, sociedad y participación desde República Dominicana.',
 }
 export function SettingsPage() {
   const [settings, setSettings] = useState(defaults)

@@ -1,6 +1,6 @@
 # SumateRD
 
-SumateRD es una webapp editorial y de participación centrada en Opinión y Sociedad de República Dominicana. El frontend público es una SPA React responsive; Firebase aporta identidad, datos, archivos y operaciones privilegiadas.
+SumateRD es una webapp editorial y de participación centrada en Opinión, Sociedad y Cambio en República Dominicana. Cambio presenta la propuesta de un nuevo partido y permite registrar interés preliminar en participar. El frontend público es una SPA React responsive; Firebase aporta identidad, datos, archivos y operaciones privilegiadas.
 
 ## Stack
 
