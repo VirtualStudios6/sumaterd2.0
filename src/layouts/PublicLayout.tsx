@@ -1,4 +1,5 @@
 import { Outlet, ScrollRestoration } from 'react-router-dom'
+import { AccessibilityMenu } from '../components/AccessibilityMenu'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 export function PublicLayout() {
@@ -12,6 +13,7 @@ export function PublicLayout() {
         <Outlet />
       </main>
       <Footer />
+      <AccessibilityMenu />
       <ScrollRestoration />
     </>
   )

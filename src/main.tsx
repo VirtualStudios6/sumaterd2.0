@@ -8,7 +8,6 @@ import { AdminProvider } from './features/admin/AdminProvider'
 import { AuthProvider } from './app/AuthProvider'
 import { SiteSettingsProvider } from './app/SiteSettingsProvider'
 import { router } from './app/router'
-import { AccessibilityMenu } from './components/AccessibilityMenu'
 import './styles.css'
 
 registerSW({ immediate: true })
@@ -20,7 +19,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <SiteSettingsProvider>
           <AdminProvider>
             <RouterProvider router={router} />
-            <AccessibilityMenu />
           </AdminProvider>
         </SiteSettingsProvider>
       </AuthProvider>
