@@ -5,44 +5,46 @@ export function AboutPage() {
   const { aboutText } = useSiteSettings()
   return (
     <Info title="Sobre nosotros">
-      <p>{aboutText}</p>
+      <TextBlocks value={aboutText} />
     </Info>
   )
 }
 export function PrivacyPage() {
+  const { privacyText, privacyUpdatedAt, contactEmail } = useSiteSettings()
   return (
     <Info title="Privacidad">
-      <div className="notice">Documento base pendiente de revisión legal antes de producción.</div>
-      <p>
-        SumateRD utiliza los datos de cuenta para autenticar usuarios y gestionar su perfil. La
-        cédula se valida y se reserva mediante un identificador no público; nunca almacenamos
-        contraseñas en Firestore.
-      </p>
-      <p>
-        En Proyecto Cambio recopilamos únicamente los datos que la persona envía voluntariamente
-        para conocer su interés, sus ideas y la forma en que desea participar. Esta información es
-        privada y su envío no constituye afiliación formal a un partido político.
-      </p>
-      <p>
-        La versión final deberá identificar al responsable del tratamiento, plazos de conservación,
-        base jurídica y canales formales para ejercer derechos.
-      </p>
+      {privacyUpdatedAt && <p className="info-updated">Última actualización: {privacyUpdatedAt}</p>}
+      <TextBlocks value={privacyText} />
+      {contactEmail && (
+        <p>
+          Para ejercer tus derechos o realizar una consulta, escribe a{' '}
+          <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
+        </p>
+      )}
     </Info>
   )
 }
 export function ContactPage() {
-  const { contactEmail } = useSiteSettings()
+  const { contactEmail, contactText } = useSiteSettings()
   return (
     <Info title="Contacto">
+      <TextBlocks value={contactText} />
       {contactEmail ? (
         <p>
           Puedes escribirnos a <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
         </p>
       ) : (
-        <p>El canal de contacto oficial será publicado próximamente.</p>
+        <p>El equipo administrador debe configurar el correo oficial desde el panel.</p>
       )}
     </Info>
   )
+}
+
+function TextBlocks({ value }: { value: string }) {
+  return value
+    .split(/\n\s*\n/)
+    .filter(Boolean)
+    .map((paragraph) => <p key={paragraph}>{paragraph}</p>)
 }
 export function NotFoundPage() {
   return (

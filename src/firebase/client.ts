@@ -1,4 +1,5 @@
 import { getApp, getApps, initializeApp } from 'firebase/app'
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check'
 import { connectAuthEmulator, getAuth } from 'firebase/auth'
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions'
@@ -15,6 +16,13 @@ const config = {
 
 export const firebaseConfigured = Boolean(config.apiKey && config.projectId)
 const app = getApps().length ? getApp() : initializeApp(config)
+const appCheckSiteKey = import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY
+if (appCheckSiteKey && !import.meta.env.DEV) {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
+    isTokenAutoRefreshEnabled: true,
+  })
+}
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const functions = getFunctions(app, 'us-central1')

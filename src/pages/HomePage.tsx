@@ -3,9 +3,9 @@ import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, MessageCircle } fr
 import { useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
+import { useSiteSettings } from '../app/SiteSettingsProvider'
 import { ArticleCard, ArticleMeta, CategoryBadge } from '../components/ArticleParts'
-import { Spinner } from '../components/Ui'
-import { DEMO_ARTICLES, DEMO_PANELS } from '../data/demoContent'
+import { EmptyState, ErrorState, Spinner } from '../components/Ui'
 import { db } from '../firebase/client'
 import { CATEGORIES, isPublicCategory } from '../lib/constants'
 import { getPublishedArticles } from '../services/articles'
@@ -94,32 +94,36 @@ function HeroCarousel({ panels }: { panels: CarouselPanel[] }) {
 }
 
 export function HomePage() {
+  const settings = useSiteSettings()
   const [articles, setArticles] = useState<Article[]>([])
   const [panels, setPanels] = useState<CarouselPanel[]>([])
   const [loading, setLoading] = useState(true)
-  const [usingDemo, setUsingDemo] = useState(false)
+  const [loadError, setLoadError] = useState('')
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       getPublishedArticles({ pageSize: 30 }),
       getDocs(
         query(collection(db, 'carousel'), where('active', '==', true), orderBy('order'), limit(8)),
       ),
     ])
-      .then(([result, snap]) => {
-        const visibleArticles = result.articles.filter((article) =>
-          isPublicCategory(article.category),
-        )
-        const remotePanels = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as CarouselPanel)
-        const hasArticles = visibleArticles.length > 0
-        const hasPanels = remotePanels.length > 0
-        setArticles(hasArticles ? visibleArticles.slice(0, 10) : DEMO_ARTICLES)
-        setPanels(hasPanels ? remotePanels : DEMO_PANELS)
-        setUsingDemo(!hasArticles || !hasPanels)
-      })
-      .catch(() => {
-        setArticles(DEMO_ARTICLES)
-        setPanels(DEMO_PANELS)
-        setUsingDemo(true)
+      .then(([articleResult, panelResult]) => {
+        if (articleResult.status === 'fulfilled') {
+          setArticles(
+            articleResult.value.articles
+              .filter((article) => isPublicCategory(article.category))
+              .slice(0, 10),
+          )
+        }
+        if (panelResult.status === 'fulfilled') {
+          setPanels(
+            panelResult.value.docs.map(
+              (item) => ({ id: item.id, ...item.data() }) as CarouselPanel,
+            ),
+          )
+        }
+        if (articleResult.status === 'rejected' || panelResult.status === 'rejected') {
+          setLoadError('Parte de la portada no está disponible en este momento. Intenta recargar.')
+        }
       })
       .finally(() => setLoading(false))
   }, [])
@@ -140,25 +144,14 @@ export function HomePage() {
           <Spinner label="Cargando portada" />
         ) : (
           <>
-            {usingDemo && (
-              <div className="demo-notice" role="status">
-                <strong>Vista de demostración</strong>
-                <span>
-                  Estos ejemplos muestran cómo lucirá la portada mientras se publica el contenido
-                  real.
-                </span>
-              </div>
-            )}
+            {loadError && <ErrorState message={loadError} />}
             <HeroCarousel panels={panels} />
             <section className="home-editorial-intro" aria-label="Propósito de SumateRD">
               <div>
-                <p className="eyebrow">Un país en conversación</p>
-                <h2>Información para comprender. Espacios para participar.</h2>
+                <p className="eyebrow">{settings.homeEyebrow}</p>
+                <h2>{settings.homeTitle}</h2>
               </div>
-              <p>
-                SumateRD conecta ideas, historias y voces dominicanas en una experiencia clara,
-                cercana y abierta a la ciudadanía.
-              </p>
+              <p>{settings.homeDescription}</p>
             </section>
             {main ? (
               <section className="featured-block" aria-labelledby="destacado">
@@ -192,7 +185,14 @@ export function HomePage() {
                   </div>
                 </div>
               </section>
-            ) : null}
+            ) : (
+              <section className="home-empty-content">
+                <EmptyState
+                  title="Próximamente encontrarás nuevas publicaciones"
+                  message="El equipo editorial está preparando el contenido de esta sección."
+                />
+              </section>
+            )}
             {rest.length > 2 && (
               <section className="latest">
                 <div className="section-heading">
@@ -222,9 +222,9 @@ export function HomePage() {
             </section>
             <section className="home-participation-cta">
               <div>
-                <p className="eyebrow">Tu voz cuenta</p>
-                <h2>La conversación también comienza contigo.</h2>
-                <p>Comparte una idea en el foro o conoce cómo participar en Proyecto Cambio.</p>
+                <p className="eyebrow">{settings.participationEyebrow}</p>
+                <h2>{settings.participationTitle}</h2>
+                <p>{settings.participationText}</p>
               </div>
               <div>
                 <Link className="button light" to="/categoria/opinion">

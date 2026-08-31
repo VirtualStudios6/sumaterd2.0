@@ -1,4 +1,5 @@
 import { logger } from 'firebase-functions'
+import { defineBoolean } from 'firebase-functions/params'
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https'
 import {
   assertAdmin,
@@ -6,6 +7,7 @@ import {
   bucket,
   cleanText,
   db,
+  enforcePublicRateLimit,
   FieldValue,
   hashPublicIdentifier,
   normalizeCedula,
@@ -15,53 +17,59 @@ import {
 } from './shared.js'
 
 const changeParticipationOptions = new Set(['ideas', 'volunteer', 'organizer', 'information'])
-export const registerUser = onCall({ cors: true, enforceAppCheck: false }, async (request) => {
-  const fullName = cleanText(request.data?.fullName, 100)
-  const email = cleanText(request.data?.email, 254).toLowerCase()
-  const password = String(request.data?.password || '')
-  const cedula = normalizeCedula(request.data?.cedula)
-  if (
-    fullName.length < 3 ||
-    !/^\S+@\S+\.\S+$/.test(email) ||
-    password.length < 8 ||
-    !validCedula(cedula)
-  )
-    throw new HttpsError('invalid-argument', 'No pudimos completar el registro.')
-  let user
-  try {
-    user = await adminAuth.createUser({ email, password, displayName: fullName })
-    await db.runTransaction(async (tx) => {
-      const reservationRef = db.doc(`cedulaReservations/${cedula}`)
-      const reservation = await tx.get(reservationRef)
-      if (reservation.exists)
-        throw new HttpsError('already-exists', 'No pudimos completar el registro.')
-      const now = FieldValue.serverTimestamp()
-      tx.create(reservationRef, { uid: user!.uid, createdAt: now })
-      tx.create(db.doc(`userPrivate/${user!.uid}`), { cedula, createdAt: now })
-      tx.create(db.doc(`users/${user!.uid}`), {
-        uid: user!.uid,
-        fullName,
-        email,
-        cedulaMasked: `***-*******-${cedula[10]}`,
-        status: 'active',
-        createdAt: now,
-        updatedAt: now,
+const enforcePublicAppCheck = defineBoolean('ENFORCE_APP_CHECK', { default: false })
+export const registerUser = onCall(
+  { cors: true, enforceAppCheck: enforcePublicAppCheck },
+  async (request) => {
+    await enforcePublicRateLimit('register-user', request, 10, 15 * 60 * 1000)
+    const fullName = cleanText(request.data?.fullName, 100)
+    const email = cleanText(request.data?.email, 254).toLowerCase()
+    const password = String(request.data?.password || '')
+    const cedula = normalizeCedula(request.data?.cedula)
+    if (
+      fullName.length < 3 ||
+      !/^\S+@\S+\.\S+$/.test(email) ||
+      password.length < 8 ||
+      !validCedula(cedula)
+    )
+      throw new HttpsError('invalid-argument', 'No pudimos completar el registro.')
+    let user
+    try {
+      user = await adminAuth.createUser({ email, password, displayName: fullName })
+      await db.runTransaction(async (tx) => {
+        const reservationRef = db.doc(`cedulaReservations/${cedula}`)
+        const reservation = await tx.get(reservationRef)
+        if (reservation.exists)
+          throw new HttpsError('already-exists', 'No pudimos completar el registro.')
+        const now = FieldValue.serverTimestamp()
+        tx.create(reservationRef, { uid: user!.uid, createdAt: now })
+        tx.create(db.doc(`userPrivate/${user!.uid}`), { cedula, createdAt: now })
+        tx.create(db.doc(`users/${user!.uid}`), {
+          uid: user!.uid,
+          fullName,
+          email,
+          cedulaMasked: `***-*******-${cedula[10]}`,
+          status: 'active',
+          createdAt: now,
+          updatedAt: now,
+        })
       })
-    })
-    return { uid: user.uid }
-  } catch (error) {
-    if (user) await adminAuth.deleteUser(user.uid).catch(() => undefined)
-    logger.warn('Registro rechazado', {
-      code: error instanceof HttpsError ? error.code : 'internal',
-    })
-    if (error instanceof HttpsError) throw error
-    throw new HttpsError('already-exists', 'No pudimos completar el registro.')
-  }
-})
+      return { uid: user.uid }
+    } catch (error) {
+      if (user) await adminAuth.deleteUser(user.uid).catch(() => undefined)
+      logger.warn('Registro rechazado', {
+        code: error instanceof HttpsError ? error.code : 'internal',
+      })
+      if (error instanceof HttpsError) throw error
+      throw new HttpsError('already-exists', 'No pudimos completar el registro.')
+    }
+  },
+)
 
 export const registerChangeInterest = onCall(
-  { cors: true, enforceAppCheck: false },
+  { cors: true, enforceAppCheck: enforcePublicAppCheck },
   async (request) => {
+    await enforcePublicRateLimit('change-interest', request, 20, 60 * 60 * 1000)
     const fullName = cleanText(request.data?.fullName, 100)
     const email = cleanText(request.data?.email, 254).toLowerCase()
     const phone = String(request.data?.phone || '').replace(/\D/g, '')
@@ -206,6 +214,22 @@ export const adminArticles = onCall({ cors: true }, async (request) => {
   const title = cleanText(input.title, 180)
   const desiredSlug = slugify(cleanText(input.slug, 120) || title)
   if (!title || !desiredSlug) throw new HttpsError('invalid-argument', 'Título y slug requeridos.')
+  const status = input.status === 'published' ? 'published' : 'draft'
+  const summary = cleanText(input.summary, 320)
+  const content = String(input.content || '')
+    .slice(0, 200000)
+    .trim()
+  const coverImage = cleanText(input.coverImage, 2000)
+  const coverImageAlt = cleanText(input.coverImageAlt, 240)
+  const category = cleanText(input.category, 40)
+  if (
+    status === 'published' &&
+    (!summary || !content || !coverImage || !coverImageAlt || !category)
+  )
+    throw new HttpsError(
+      'failed-precondition',
+      'Completa resumen, contenido, categoría, portada y texto alternativo antes de publicar.',
+    )
   const resultSlug = await db.runTransaction(async (tx) => {
     let candidate = desiredSlug
     let suffix = 2
@@ -218,17 +242,16 @@ export const adminArticles = onCall({ cors: true }, async (request) => {
     }
     const current = await tx.get(ref)
     const now = FieldValue.serverTimestamp()
-    const status = input.status === 'published' ? 'published' : 'draft'
     const data = {
       title,
       slug: candidate,
-      summary: cleanText(input.summary, 320),
-      content: String(input.content || '').slice(0, 200000),
-      coverImage: cleanText(input.coverImage, 2000),
-      coverImageAlt: cleanText(input.coverImageAlt, 240),
+      summary,
+      content,
+      coverImage,
+      coverImageAlt,
       authorId: cleanText(input.authorId, 100) || 'editorial',
       authorName: cleanText(input.authorName, 100) || 'Redacción SumateRD',
-      category: cleanText(input.category, 40),
+      category,
       tags: Array.isArray(input.tags)
         ? input.tags.slice(0, 12).map((x: unknown) => cleanText(x, 40))
         : [],
@@ -361,14 +384,26 @@ export const adminSettings = onCall({ cors: true }, async (request) => {
   }
   if (request.data?.action === 'save') {
     const s = request.data?.settings || {}
+    const contactEmail = cleanText(s.contactEmail, 254).toLowerCase()
+    if (contactEmail && !/^\S+@\S+\.\S+$/.test(contactEmail))
+      throw new HttpsError('invalid-argument', 'Correo de contacto inválido.')
     await ref.set(
       {
         public: true,
         siteName: cleanText(s.siteName, 80),
         tagline: cleanText(s.tagline, 180),
-        contactEmail: cleanText(s.contactEmail, 254),
-        aboutText: cleanText(s.aboutText, 600),
+        contactEmail,
         footerText: cleanText(s.footerText, 180),
+        homeEyebrow: cleanText(s.homeEyebrow, 80),
+        homeTitle: cleanText(s.homeTitle, 180),
+        homeDescription: cleanText(s.homeDescription, 500),
+        participationEyebrow: cleanText(s.participationEyebrow, 80),
+        participationTitle: cleanText(s.participationTitle, 180),
+        participationText: cleanText(s.participationText, 400),
+        aboutText: cleanText(s.aboutText, 4000),
+        privacyText: cleanText(s.privacyText, 8000),
+        privacyUpdatedAt: cleanText(s.privacyUpdatedAt, 80),
+        contactText: cleanText(s.contactText, 1500),
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true },

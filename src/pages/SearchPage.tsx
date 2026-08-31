@@ -3,7 +3,6 @@ import { useState, type FormEvent } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { ArticleCard } from '../components/ArticleParts'
 import { EmptyState, ErrorState, Spinner } from '../components/Ui'
-import { searchDemoArticles } from '../data/demoContent'
 import { isPublicCategory } from '../lib/constants'
 import { searchArticles } from '../services/articles'
 import type { Article } from '../types'
@@ -24,9 +23,10 @@ export function SearchPage() {
       const remoteResults = (await searchArticles(term)).filter((article) =>
         isPublicCategory(article.category),
       )
-      setResults(remoteResults.length ? remoteResults : searchDemoArticles(term))
+      setResults(remoteResults)
     } catch {
-      setResults(searchDemoArticles(term))
+      setResults(null)
+      setError('No pudimos completar la búsqueda. Comprueba la conexión e inténtalo de nuevo.')
     } finally {
       setLoading(false)
     }

@@ -33,7 +33,7 @@ export function ImageUploader({
       onChange(result.url)
       setProgress('Imagen subida')
     } catch {
-      setError('No pudimos subir la imagen. Comprueba el emulador o los permisos de administrador.')
+      setError('No pudimos subir la imagen. Comprueba la conexión y tus permisos de administrador.')
       setProgress('')
     }
   }

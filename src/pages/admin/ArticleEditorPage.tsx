@@ -1,5 +1,7 @@
+import { Bold, Eye, Heading2, Italic, Link as LinkIcon, List, Quote } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { MarkdownContent } from '../../components/ArticleParts'
 import { ErrorState, Notice, Spinner } from '../../components/Ui'
 import { ImageUploader } from '../../components/ImageUploader'
 import { CATEGORIES } from '../../lib/constants'
@@ -40,11 +42,13 @@ export function ArticleEditorPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const temporaryOwnerId = useRef(crypto.randomUUID()).current
+  const contentRef = useRef<HTMLTextAreaElement>(null)
   const [draft, setDraft] = useState<Draft>(blank)
   const [contentImageAlt, setContentImageAlt] = useState('')
   const [loading, setLoading] = useState(Boolean(id))
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState('')
+  const [showPreview, setShowPreview] = useState(false)
   const initialized = useRef(false)
   const ownerId = id || draft.id || temporaryOwnerId
   useEffect(() => {
@@ -66,7 +70,7 @@ export function ArticleEditorPage() {
       })
   }, [id])
   useEffect(() => {
-    if (!initialized.current || !id) return
+    if (!initialized.current || !id || draft.status !== 'draft') return
     setSaveState('saving')
     const timer = setTimeout(() => {
       const payload = {
@@ -94,6 +98,18 @@ export function ArticleEditorPage() {
       setError('Título y slug son obligatorios.')
       return
     }
+    if (
+      status === 'published' &&
+      (!draft.summary.trim() ||
+        !draft.content.trim() ||
+        !draft.coverImage ||
+        !draft.coverImageAlt.trim())
+    ) {
+      setError(
+        'Para publicar completa el resumen, contenido, imagen de portada y texto alternativo.',
+      )
+      return
+    }
     setSaveState('saving')
     setError('')
     try {
@@ -119,6 +135,27 @@ export function ArticleEditorPage() {
     e.preventDefault()
     void persist(draft.status)
   }
+  const insertMarkdown = (before: string, after = '', placeholder = 'texto') => {
+    const element = contentRef.current
+    if (!element) return
+    const start = element.selectionStart
+    const end = element.selectionEnd
+    const selected = draft.content.slice(start, end) || placeholder
+    const next = `${draft.content.slice(0, start)}${before}${selected}${after}${draft.content.slice(end)}`
+    update('content', next)
+    requestAnimationFrame(() => {
+      element.focus()
+      element.setSelectionRange(start + before.length, start + before.length + selected.length)
+    })
+  }
+  const publishReady = Boolean(
+    draft.title.trim() &&
+    draft.slug.trim() &&
+    draft.summary.trim() &&
+    draft.content.trim() &&
+    draft.coverImage &&
+    draft.coverImageAlt.trim(),
+  )
   if (loading) return <Spinner label="Cargando editor" />
   return (
     <>
@@ -168,17 +205,68 @@ export function ArticleEditorPage() {
               onChange={(e) => update('summary', e.target.value)}
               required
             />
+            <small>{draft.summary.length}/320 caracteres</small>
           </label>
           <label>
-            Contenido Markdown
-            <textarea
-              className="markdown-editor"
-              rows={22}
-              value={draft.content}
-              onChange={(e) => update('content', e.target.value)}
-              required
-              placeholder="# Escribe el artículo&#10;&#10;Comienza aquí…"
-            />
+            Contenido
+            <div className="markdown-toolbar" role="toolbar" aria-label="Formato del artículo">
+              <button
+                type="button"
+                onClick={() => insertMarkdown('## ', '', 'Subtítulo')}
+                title="Subtítulo"
+              >
+                <Heading2 />
+              </button>
+              <button type="button" onClick={() => insertMarkdown('**', '**')} title="Negrita">
+                <Bold />
+              </button>
+              <button type="button" onClick={() => insertMarkdown('_', '_')} title="Cursiva">
+                <Italic />
+              </button>
+              <button type="button" onClick={() => insertMarkdown('> ', '', 'Cita')} title="Cita">
+                <Quote />
+              </button>
+              <button
+                type="button"
+                onClick={() => insertMarkdown('- ', '', 'Elemento')}
+                title="Lista"
+              >
+                <List />
+              </button>
+              <button
+                type="button"
+                onClick={() => insertMarkdown('[', '](https://)', 'texto del enlace')}
+                title="Enlace"
+              >
+                <LinkIcon />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPreview((value) => !value)}
+                title="Vista previa"
+              >
+                <Eye /> {showPreview ? 'Editar' : 'Previsualizar'}
+              </button>
+            </div>
+            {showPreview ? (
+              <div className="editor-live-preview">
+                {draft.content ? (
+                  <MarkdownContent content={draft.content} />
+                ) : (
+                  <p>Comienza a escribir para ver la vista previa.</p>
+                )}
+              </div>
+            ) : (
+              <textarea
+                ref={contentRef}
+                className="markdown-editor"
+                rows={22}
+                value={draft.content}
+                onChange={(e) => update('content', e.target.value)}
+                required
+                placeholder="# Escribe el artículo&#10;&#10;Comienza aquí…"
+              />
+            )}
           </label>
           <div className="editor-pair">
             <label>
@@ -203,16 +291,10 @@ export function ArticleEditorPage() {
         <aside className="editor-side">
           <section>
             <h2>Publicación</h2>
-            <label>
-              Estado
-              <select
-                value={draft.status}
-                onChange={(e) => update('status', e.target.value as ArticleStatus)}
-              >
-                <option value="draft">Borrador</option>
-                <option value="published">Publicado</option>
-              </select>
-            </label>
+            <div className={`publication-state ${draft.status}`}>
+              <span>Estado actual</span>
+              <strong>{draft.status === 'published' ? 'Publicado' : 'Borrador'}</strong>
+            </div>
             <label className="check">
               <input
                 type="checkbox"
@@ -230,12 +312,18 @@ export function ArticleEditorPage() {
               </Link>
             )}
             <button
-              className="text-button full"
+              className={
+                draft.status === 'published' ? 'button secondary full' : 'button publish full'
+              }
               type="button"
               onClick={() => void persist(draft.status === 'published' ? 'draft' : 'published')}
+              disabled={draft.status === 'draft' && !publishReady}
             >
               {draft.status === 'published' ? 'Pasar a borrador' : 'Publicar ahora'}
             </button>
+            {!publishReady && draft.status === 'draft' && (
+              <small>Completa todos los elementos obligatorios para publicar.</small>
+            )}
           </section>
           <section>
             <h2>Clasificación</h2>

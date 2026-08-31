@@ -24,6 +24,33 @@ export async function assertAdmin(request: CallableRequest) {
   if (profile.get('isAdmin') !== true)
     throw new HttpsError('permission-denied', 'Acceso no autorizado.')
 }
+export async function enforcePublicRateLimit(
+  scope: string,
+  request: CallableRequest,
+  maximum: number,
+  windowMs: number,
+) {
+  const forwarded = String(request.rawRequest.headers['x-forwarded-for'] || '')
+    .split(',')[0]
+    .trim()
+  const address = forwarded || request.rawRequest.ip || 'unknown'
+  const ref = db.doc(`rateLimits/${hashPublicIdentifier(`${scope}:${address}`)}`)
+  const now = Date.now()
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref)
+    const end = snapshot.get('windowEndsAt')
+    const windowEndsAt = end instanceof Timestamp ? end.toMillis() : 0
+    const attempts = windowEndsAt > now ? Number(snapshot.get('attempts') || 0) : 0
+    if (attempts >= maximum)
+      throw new HttpsError('resource-exhausted', 'Demasiados intentos. Intenta más tarde.')
+    transaction.set(ref, {
+      scope,
+      attempts: attempts + 1,
+      windowEndsAt: Timestamp.fromMillis(windowEndsAt > now ? windowEndsAt : now + windowMs),
+      updatedAt: FieldValue.serverTimestamp(),
+    })
+  })
+}
 export function cleanText(value: unknown, max = 500): string {
   return typeof value === 'string' ? value.trim().slice(0, max) : ''
 }

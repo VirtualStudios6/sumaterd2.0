@@ -92,7 +92,7 @@ Antes de conectar un proyecto real:
 5. Configura `SITE_URL=https://sumaterd.com` para Functions.
 6. Despliega índices, reglas y Functions con Firebase CLI.
 7. Configura plantillas de correo y remitente de Firebase Auth.
-8. Activa App Check y cambia `enforceAppCheck` a `true` en las Functions públicas después de verificar clientes legítimos.
+8. Registra la aplicación web en App Check con reCAPTCHA Enterprise, configura `VITE_FIREBASE_APPCHECK_SITE_KEY` y asigna `ENFORCE_APP_CHECK=true` al desplegar las Functions después de verificar clientes legítimos.
 
 Ejemplo de despliegue backend:
 
@@ -127,7 +127,7 @@ La cuenta debe cerrar y volver a iniciar sesión para recibir el token renovado.
 
 ## Artículos, Markdown e imágenes
 
-Los slugs se normalizan y se vuelven únicos en una transacción de servidor. El editor no recalcula automáticamente el slug de un artículo existente. El autosave espera 1.2 segundos y solo opera en artículos ya creados; un artículo nuevo se persiste con los botones explícitos.
+Los slugs se normalizan y se vuelven únicos en una transacción de servidor. El editor no recalcula automáticamente el slug de un artículo existente. El autosave espera 1.2 segundos y solo opera en borradores ya creados. Las publicaciones activas nunca cambian por autosave: requieren pulsar `Actualizar publicación`. El servidor impide publicar sin resumen, contenido, categoría, portada y texto alternativo.
 
 Markdown ignora HTML arbitrario y atraviesa `rehype-sanitize`. Los enlaces configurados admiten rutas internas, `http:` y `https:`. Las imágenes se validan en cliente y servidor por tamaño, MIME y firma mágica; cada reemplazo limpia el directorio anterior del mismo propietario/tipo.
 
@@ -178,6 +178,7 @@ Para que el acceso con Google funcione desde esa dirección, añade `virtualstud
 - Las contraseñas viven exclusivamente en Firebase Auth.
 - Las operaciones administrativas se autorizan nuevamente en Functions.
 - No se registran cédulas, correos ni contraseñas en logs de aplicación.
-- Las páginas legales contienen advertencias explícitas donde faltan datos reales.
+- Las Functions públicas aplican límites por origen; App Check puede exigirse con el parámetro `ENFORCE_APP_CHECK` cuando la clave web esté configurada.
+- Configuración administra desde el CMS la identidad del sitio, portada editorial, Sobre nosotros, privacidad y contacto.
 
-Antes de producción aún corresponde hacer pruebas manuales de accesibilidad con teclado/lector, verificar dimensiones de imágenes (el servidor valida tipo y peso, no dimensiones), instrumentar observabilidad sin datos sensibles, aplicar políticas de retención y obtener revisión legal dominicana.
+Antes de abrir el sitio al público, el responsable debe completar el correo oficial desde el CMS, revisar el texto de privacidad con asesoría aplicable, configurar App Check en Firebase Console y realizar una prueba manual final con teclado, lector de pantalla, registro real y una publicación real.

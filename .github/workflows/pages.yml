@@ -26,6 +26,7 @@ jobs:
       VITE_FIREBASE_STORAGE_BUCKET: sumaterd-da931.firebasestorage.app
       VITE_FIREBASE_MESSAGING_SENDER_ID: '696790776839'
       VITE_FIREBASE_APP_ID: 1:696790776839:web:d2f377f674434b0aa9fea2
+      VITE_FIREBASE_APPCHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APPCHECK_SITE_KEY }}
       VITE_USE_FIREBASE_EMULATORS: 'false'
     steps:
       - name: Checkout
@@ -37,6 +38,12 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Install Functions dependencies
+        run: npm ci --prefix functions
+      - name: Validate source
+        run: npm run typecheck && npm run lint && npm test
+      - name: Build Functions
+        run: npm run build --prefix functions
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Build

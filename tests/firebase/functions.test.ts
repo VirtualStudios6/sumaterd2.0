@@ -124,6 +124,33 @@ describe('Registro de interÃ©s de Proyecto Cambio', () => {
 })
 
 describe('Functions del CMS en Emulator Suite', () => {
+  it('guarda y recupera la configuración pública del sitio', async () => {
+    await callable('adminSettings', {
+      action: 'save',
+      settings: {
+        siteName: 'SumateRD',
+        tagline: 'República Dominicana en conversación',
+        contactEmail: 'contacto@example.test',
+        footerText: 'Información y participación.',
+        homeEyebrow: 'Un país en conversación',
+        homeTitle: 'Información para comprender.',
+        homeDescription: 'Una descripción pública.',
+        participationEyebrow: 'Tu voz cuenta',
+        participationTitle: 'Participa',
+        participationText: 'Comparte tus ideas.',
+        aboutText: 'Texto institucional.',
+        privacyText: 'Información sobre privacidad.',
+        privacyUpdatedAt: '30 de agosto de 2026',
+        contactText: 'Canal oficial de contacto.',
+      },
+    })
+    const result = await callable<{ settings: { homeTitle: string; privacyText: string } }>(
+      'adminSettings',
+      { action: 'get' },
+    )
+    expect(result.settings.homeTitle).toBe('Información para comprender.')
+    expect(result.settings.privacyText).toBe('Información sobre privacidad.')
+  })
   it('conecta los módulos administrativos de usuarios, foro y solicitudes', async () => {
     const email = `admin-modules-${Date.now()}@example.test`
     await callable('registerUser', {
@@ -203,6 +230,8 @@ describe('Functions del CMS en Emulator Suite', () => {
         slug: first.slug,
         summary: 'Resumen',
         content: 'Contenido actualizado',
+        coverImage: 'https://example.test/portada.webp',
+        coverImageAlt: 'Descripción de la portada',
         category: 'actualidad',
         tags: ['prueba'],
         keywords: ['prueba'],
@@ -218,6 +247,19 @@ describe('Functions del CMS en Emulator Suite', () => {
     expect(
       list.articles.some((article) => article.id === first.id && article.status === 'published'),
     ).toBe(true)
+    await expect(
+      callable('adminArticles', {
+        action: 'save',
+        article: {
+          title: 'Publicación incompleta',
+          slug: 'publicacion-incompleta',
+          summary: '',
+          content: '',
+          category: 'sociedad',
+          status: 'published',
+        },
+      }),
+    ).rejects.toThrow('FAILED_PRECONDITION')
     await callable('adminArticles', { action: 'delete', id: second.id })
     const deleted = await callable<{ article: null }>('adminArticles', {
       action: 'get',

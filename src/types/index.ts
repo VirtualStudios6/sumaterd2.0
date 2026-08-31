@@ -83,8 +83,17 @@ export interface SiteSettings {
   siteName: string
   tagline: string
   contactEmail: string
-  aboutText?: string
-  footerText?: string
+  footerText: string
+  homeEyebrow: string
+  homeTitle: string
+  homeDescription: string
+  participationEyebrow: string
+  participationTitle: string
+  participationText: string
+  aboutText: string
+  privacyText: string
+  privacyUpdatedAt: string
+  contactText: string
 }
 
 export interface AdminUserRecord extends UserProfile {

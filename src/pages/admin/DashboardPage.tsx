@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FileText, Images, MessageSquareText, UserRoundCog, Vote } from 'lucide-react'
+import { FileText, Images, MessageSquareText, Settings, UserRoundCog, Vote } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ErrorState, Spinner } from '../../components/Ui'
 import { getAdminArticles, getDashboardCounts } from '../../services/articles'
@@ -23,7 +23,7 @@ export function DashboardPage() {
         setCounts(c)
         setRecent(a.slice(0, 5))
       })
-      .catch(() => setError('No se pudo cargar el resumen. Inicia Firebase Emulator Suite.'))
+      .catch(() => setError('No se pudo cargar el resumen. Revisa la conexión y tus permisos.'))
   }, [])
   return (
     <>
@@ -109,6 +109,13 @@ export function DashboardPage() {
             <span>
               <strong>Cambio</strong>
               <small>Dar seguimiento</small>
+            </span>
+          </Link>
+          <Link to="/admin/settings">
+            <Settings />
+            <span>
+              <strong>Configuración</strong>
+              <small>Editar textos y datos del sitio</small>
             </span>
           </Link>
         </div>

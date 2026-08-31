@@ -1,37 +1,14 @@
-import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react'
+import { lazy, Suspense, type ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { PageTransitionSplash } from '../components/PageTransitionSplash'
 import { PublicLayout } from '../layouts/PublicLayout'
 
-const SPLASH_THRESHOLD_MS = 400
-const SPLASH_VISIBLE_MS = 3000
-
 function lazyPage<T extends ComponentType>(loader: () => Promise<{ default: T }>) {
-  return lazy(async () => {
-    const startedAt = Date.now()
-    const loaded = await loader()
-    const elapsed = Date.now() - startedAt
-
-    if (elapsed >= SPLASH_THRESHOLD_MS) {
-      const remainingVisibleTime = SPLASH_THRESHOLD_MS + SPLASH_VISIBLE_MS - elapsed
-      if (remainingVisibleTime > 0) {
-        await new Promise((resolve) => window.setTimeout(resolve, remainingVisibleTime))
-      }
-    }
-
-    return loaded
-  })
+  return lazy(loader)
 }
 
 function RouteLoadingFallback() {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setVisible(true), SPLASH_THRESHOLD_MS)
-    return () => window.clearTimeout(timer)
-  }, [])
-
-  return visible ? <PageTransitionSplash /> : null
+  return <PageTransitionSplash />
 }
 
 const HomePage = lazyPage(() => import('../pages/HomePage').then((m) => ({ default: m.HomePage })))

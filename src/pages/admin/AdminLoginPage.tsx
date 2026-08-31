@@ -43,7 +43,7 @@ export function AdminLoginPage() {
         <Brand />
         <p className="eyebrow">Administración</p>
         <h1>Acceso al CMS</h1>
-        <p>Acceso protegido con Firebase Authentication y permisos administrativos.</p>
+        <p>Solo los usuarios con permisos Admin pueden entrar.</p>
         <form className="form" onSubmit={submit}>
           {error && <ErrorState message={error} />}
           <GoogleAuthButton

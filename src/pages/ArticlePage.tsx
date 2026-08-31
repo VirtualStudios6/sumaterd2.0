@@ -9,7 +9,6 @@ import {
   ShareButtons,
 } from '../components/ArticleParts'
 import { EmptyState, ErrorState, Spinner } from '../components/Ui'
-import { DEMO_ARTICLES, getDemoArticle } from '../data/demoContent'
 import { SITE_URL } from '../lib/constants'
 import { isPublicCategory } from '../lib/constants'
 import { getArticleBySlug, getRelated } from '../services/articles'
@@ -27,40 +26,19 @@ export function ArticlePage() {
     setError('')
     getArticleBySlug(slug)
       .then(async (a) => {
-        const candidate = a || getDemoArticle(slug)
-        const selected = candidate && isPublicCategory(candidate.category) ? candidate : null
+        const selected = a && isPublicCategory(a.category) ? a : null
         setArticle(selected)
         if (!selected) return
         try {
-          const remoteRelated = a ? await getRelated(a) : []
-          setRelated(
-            remoteRelated.length
-              ? remoteRelated
-              : DEMO_ARTICLES.filter(
-                  (item) => item.category === selected.category && item.id !== selected.id,
-                ).slice(0, 3),
-          )
+          setRelated(await getRelated(selected))
         } catch {
-          setRelated(
-            DEMO_ARTICLES.filter(
-              (item) => item.category === selected.category && item.id !== selected.id,
-            ).slice(0, 3),
-          )
+          setRelated([])
         }
       })
       .catch(() => {
-        const candidate = getDemoArticle(slug)
-        const selected = candidate && isPublicCategory(candidate.category) ? candidate : null
-        if (!selected) {
-          setError('No pudimos cargar este artículo.')
-          return
-        }
-        setArticle(selected)
-        setRelated(
-          DEMO_ARTICLES.filter(
-            (item) => item.category === selected.category && item.id !== selected.id,
-          ).slice(0, 3),
-        )
+        setArticle(null)
+        setRelated([])
+        setError('No pudimos cargar este artículo. Comprueba la conexión e inténtalo de nuevo.')
       })
       .finally(() => setLoading(false))
   }, [slug])

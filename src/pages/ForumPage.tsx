@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../app/AuthProvider'
-import { DEMO_FORUM_POSTS, DEMO_FORUM_REPLIES } from '../data/forumDemo'
+import { EmptyState, ErrorState } from '../components/Ui'
 import {
   createForumPost,
   createForumReply,
@@ -37,16 +37,11 @@ function ForumThread({ post, authorName }: { post: ForumPost; authorName: string
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
-  const demoReplies = DEMO_FORUM_REPLIES[post.id]
 
   const openConversation = async () => {
     const next = !open
     setOpen(next)
     if (!next || replies.length) return
-    if (demoReplies) {
-      setReplies(demoReplies)
-      return
-    }
     setLoading(true)
     try {
       setReplies(await getForumReplies(post.id))
@@ -60,10 +55,6 @@ function ForumThread({ post, authorName }: { post: ForumPost; authorName: string
   const submitReply = async (event: FormEvent) => {
     event.preventDefault()
     if (!user || reply.trim().length < 2) return
-    if (demoReplies) {
-      setError('Las conversaciones de ejemplo no reciben respuestas. Crea un tema nuevo.')
-      return
-    }
     setSending(true)
     setError('')
     try {
@@ -153,7 +144,7 @@ export function ForumPage() {
   const { user } = useAuth()
   const [posts, setPosts] = useState<ForumPost[]>([])
   const [authorName, setAuthorName] = useState('Miembro de SumateRD')
-  const [usingDemo, setUsingDemo] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [loading, setLoading] = useState(true)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -163,13 +154,13 @@ export function ForumPage() {
 
   const loadPosts = useCallback(async () => {
     setLoading(true)
+    setLoadError('')
     try {
       const result = await getForumPosts()
-      setPosts(result.length ? result : DEMO_FORUM_POSTS)
-      setUsingDemo(result.length === 0)
+      setPosts(result)
     } catch {
-      setPosts(DEMO_FORUM_POSTS)
-      setUsingDemo(true)
+      setPosts([])
+      setLoadError('No pudimos cargar las conversaciones. Intenta nuevamente.')
     } finally {
       setLoading(false)
     }
@@ -238,20 +229,20 @@ export function ForumPage() {
             </div>
             <MessageCircle aria-hidden="true" />
           </div>
-          {usingDemo && (
-            <div className="demo-notice" role="status">
-              <strong>Vista de demostración</strong>
-              <span>Estos temas muestran cómo se verá el foro con participación real.</span>
-            </div>
-          )}
+          {loadError && <ErrorState message={loadError} />}
           {loading ? (
             <p className="forum-loading">Cargando conversaciones…</p>
-          ) : (
+          ) : posts.length ? (
             <div className="forum-thread-list">
               {posts.map((post) => (
                 <ForumThread post={post} authorName={authorName} key={post.id} />
               ))}
             </div>
+          ) : (
+            <EmptyState
+              title="Aún no hay conversaciones"
+              message="Inicia sesión y abre el primer tema de la comunidad."
+            />
           )}
         </main>
 

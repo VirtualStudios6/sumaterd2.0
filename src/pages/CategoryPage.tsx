@@ -3,8 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useParams } from 'react-router-dom'
 import { ArticleCard } from '../components/ArticleParts'
-import { EmptyState, Spinner } from '../components/Ui'
-import { getDemoArticlesByCategory } from '../data/demoContent'
+import { EmptyState, ErrorState, Spinner } from '../components/Ui'
 import { CATEGORIES, PAGE_SIZE } from '../lib/constants'
 import { getPublishedArticles } from '../services/articles'
 import type { Article, CategorySlug } from '../types'
@@ -16,30 +15,28 @@ export function CategoryPage() {
   const [cursor, setCursor] = useState<DocumentSnapshot>()
   const [history, setHistory] = useState<Array<DocumentSnapshot | undefined>>([undefined])
   const [loading, setLoading] = useState(true)
-  const [usingDemo, setUsingDemo] = useState(false)
+  const [error, setError] = useState('')
   const load = useCallback(
     (next: DocumentSnapshot | undefined, newHistory: Array<DocumentSnapshot | undefined>) => {
       if (!category) return
       setLoading(true)
-      setUsingDemo(false)
+      setError('')
       getPublishedArticles({
         category: category.slug as CategorySlug,
         pageSize: PAGE_SIZE,
         cursor: next,
       })
         .then((r) => {
-          const demoArticles = getDemoArticlesByCategory(category.slug)
-          setArticles(r.articles.length ? r.articles : demoArticles)
-          setCursor(r.articles.length ? r.cursor : undefined)
-          setUsingDemo(r.articles.length === 0 && demoArticles.length > 0)
+          setArticles(r.articles)
+          setCursor(r.cursor)
           setHistory(newHistory)
           window.scrollTo({ top: 0 })
         })
         .catch(() => {
-          setArticles(getDemoArticlesByCategory(category.slug))
+          setArticles([])
           setCursor(undefined)
           setHistory([undefined])
-          setUsingDemo(true)
+          setError('No pudimos cargar esta sección. Comprueba la conexión e inténtalo de nuevo.')
         })
         .finally(() => setLoading(false))
     },
@@ -64,12 +61,7 @@ export function CategoryPage() {
         <p>Sección</p>
         <h1>{category.name}</h1>
       </header>
-      {usingDemo && (
-        <div className="demo-notice compact" role="status">
-          <strong>Contenido de demostración</strong>
-          <span>Estas publicaciones son ejemplos visuales.</span>
-        </div>
-      )}
+      {error && <ErrorState message={error} />}
       {loading ? (
         <Spinner />
       ) : articles.length ? (
@@ -79,7 +71,7 @@ export function CategoryPage() {
               <ArticleCard key={a.id} article={a} />
             ))}
           </div>
-          <nav className="pagination" aria-label="Paginación" hidden={usingDemo}>
+          <nav className="pagination" aria-label="Paginación">
             <button
               disabled={history.length <= 1}
               onClick={() => {

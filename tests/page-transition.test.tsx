@@ -1,20 +1,16 @@
-import { act, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { PageTransitionSplash } from '../src/components/PageTransitionSplash'
 
-afterEach(() => vi.useRealTimers())
-
 describe('PageTransitionSplash', () => {
-  it('muestra la transición durante tres segundos y luego libera la página', () => {
-    vi.useFakeTimers()
+  it('muestra un estado de carga neutral mientras llega la ruta', () => {
     render(
       <MemoryRouter>
         <PageTransitionSplash />
       </MemoryRouter>,
     )
     expect(screen.getByRole('status', { name: 'Cargando página' })).toBeInTheDocument()
-    act(() => vi.advanceTimersByTime(3000))
-    expect(screen.queryByRole('status', { name: 'Cargando página' })).not.toBeInTheDocument()
+    expect(screen.getByText('Cargando contenido…')).toBeInTheDocument()
   })
 })
