@@ -64,7 +64,7 @@ export function ArticlePage() {
       </div>
     )
   const url = `${SITE_URL}/articulo/${article.slug}`
-  const image = article.coverImage || `${SITE_URL}/icons/icon.svg`
+  const image = article.coverImage || `${SITE_URL}/brand/logo.png`
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Article',

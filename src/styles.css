@@ -112,18 +112,17 @@ img {
 }
 .brand {
   display: inline-flex;
-  align-items: baseline;
-  letter-spacing: -1.3px;
-  font-family: var(--font-display);
-  font-size: 31px;
-  font-weight: 900;
-  white-space: nowrap;
+  align-items: center;
+  flex: 0 0 auto;
+  line-height: 0;
 }
-.brand span {
-  color: var(--blue);
-}
-.brand b {
-  color: var(--red);
+.brand-logo {
+  width: 150px;
+  height: 72px;
+  display: block;
+  border-radius: 7px;
+  object-fit: cover;
+  object-position: center;
 }
 .topline {
   background: var(--blue);
@@ -903,8 +902,10 @@ img {
   color: #d9e0e8;
   padding: 58px 0 0;
 }
-.footer .brand span {
-  color: white;
+.footer .brand-logo,
+.admin-sidebar .brand-logo,
+.admin-mobile-head .brand-logo {
+  background: white;
 }
 .footer-grid {
   display: grid;
@@ -1387,9 +1388,6 @@ img {
 }
 .admin-sidebar .brand {
   margin: 0 8px 42px;
-}
-.admin-sidebar .brand span {
-  color: white;
 }
 .admin-sidebar nav {
   display: grid;
@@ -2143,8 +2141,9 @@ img {
     justify-content: space-between;
     gap: 7px;
   }
-  .header-main > .brand {
-    font-size: 27px;
+  .header-main > .brand .brand-logo {
+    width: 130px;
+    height: 60px;
   }
   .header-actions {
     gap: 0;
@@ -2328,8 +2327,9 @@ img {
     align-items: center;
     justify-content: space-between;
   }
-  .admin-mobile-head .brand span {
-    color: white;
+  .admin-mobile-head .brand-logo {
+    width: 118px;
+    height: 54px;
   }
   .admin-mobile-head .icon-button {
     color: white;

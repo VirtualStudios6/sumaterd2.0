@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['icons/icon.svg'],
+        includeAssets: ['brand/logo.png'],
         manifest: false,
         workbox: {
           navigateFallbackDenylist: [

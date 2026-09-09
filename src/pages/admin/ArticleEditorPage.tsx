@@ -98,16 +98,8 @@ export function ArticleEditorPage() {
       setError('Título y slug son obligatorios.')
       return
     }
-    if (
-      status === 'published' &&
-      (!draft.summary.trim() ||
-        !draft.content.trim() ||
-        !draft.coverImage ||
-        !draft.coverImageAlt.trim())
-    ) {
-      setError(
-        'Para publicar completa el resumen, contenido, imagen de portada y texto alternativo.',
-      )
+    if (status === 'published' && (!draft.summary.trim() || !draft.content.trim())) {
+      setError('Para publicar completa el resumen y el contenido.')
       return
     }
     setSaveState('saving')
@@ -117,6 +109,12 @@ export function ArticleEditorPage() {
         ...draft,
         id: draft.id || id || ownerId,
         status,
+        ...(status === 'published' && !draft.coverImage
+          ? {
+              coverImage: `${window.location.origin}${import.meta.env.BASE_URL}brand/logo.png`,
+              coverImageAlt: 'Logo de SumateRD',
+            }
+          : {}),
         slug: slugify(draft.slug),
         tags: normalizeTags(draft.tags),
         keywords: keywordsFrom(draft.title, draft.summary, draft.tags),
@@ -153,8 +151,7 @@ export function ArticleEditorPage() {
     draft.slug.trim() &&
     draft.summary.trim() &&
     draft.content.trim() &&
-    draft.coverImage &&
-    draft.coverImageAlt.trim(),
+    draft.category,
   )
   if (loading) return <Spinner label="Cargando editor" />
   return (
@@ -322,7 +319,7 @@ export function ArticleEditorPage() {
               {draft.status === 'published' ? 'Pasar a borrador' : 'Publicar ahora'}
             </button>
             {!publishReady && draft.status === 'draft' && (
-              <small>Completa todos los elementos obligatorios para publicar.</small>
+              <small>Completa el resumen y el contenido para publicar.</small>
             )}
           </section>
           <section>
