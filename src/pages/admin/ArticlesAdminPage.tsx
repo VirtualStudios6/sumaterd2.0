@@ -1,7 +1,7 @@
 import { Edit3, Eye, Plus, Search, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ConfirmDialog, ErrorState, Spinner } from '../../components/Ui'
+import { ConfirmDialog, ErrorState, Notice, Spinner } from '../../components/Ui'
 import { deleteAdminArticle, getAdminArticles } from '../../services/articles'
 import type { Article, ArticleStatus } from '../../types'
 import { formatDate } from '../../utils/date'
@@ -11,7 +11,9 @@ export function ArticlesAdminPage() {
   const [term, setTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [deleting, setDeleting] = useState<Article | null>(null)
+  const [deletingId, setDeletingId] = useState('')
   const load = () => {
     setLoading(true)
     getAdminArticles(status === 'all' ? undefined : status)
@@ -27,6 +29,21 @@ export function ArticlesAdminPage() {
       ),
     [articles, term],
   )
+  const confirmDelete = async () => {
+    if (!deleting) return
+    setDeletingId(deleting.id)
+    setError('')
+    try {
+      await deleteAdminArticle(deleting.id)
+      setDeleting(null)
+      setMessage('Artículo eliminado correctamente.')
+      load()
+    } catch {
+      setError('No se pudo eliminar el artículo. Intenta nuevamente.')
+    } finally {
+      setDeletingId('')
+    }
+  }
   return (
     <>
       <div className="admin-title">
@@ -55,6 +72,7 @@ export function ArticlesAdminPage() {
           />
         </label>
       </div>
+      {message && <Notice>{message}</Notice>}
       {error && <ErrorState message={error} />}
       {loading ? (
         <Spinner />
@@ -92,7 +110,7 @@ export function ArticlesAdminPage() {
                       <Link to={`/admin/articles/${a.id}/preview`} aria-label="Vista previa">
                         <Eye />
                       </Link>
-                      <button onClick={() => setDeleting(a)} aria-label="Eliminar">
+                      <button onClick={() => setDeleting(a)} aria-label={`Eliminar ${a.title}`}>
                         <Trash2 />
                       </button>
                     </div>
@@ -108,17 +126,10 @@ export function ArticlesAdminPage() {
         open={Boolean(deleting)}
         title="¿Eliminar este artículo?"
         onCancel={() => setDeleting(null)}
-        onConfirm={() => {
-          if (!deleting) return
-          deleteAdminArticle(deleting.id)
-            .then(() => {
-              setDeleting(null)
-              load()
-            })
-            .catch(() => setError('No se pudo eliminar.'))
-        }}
+        onConfirm={() => void confirmDelete()}
+        busy={Boolean(deletingId)}
       >
-        Esta acción no se puede deshacer.
+        {deleting ? `Eliminarás “${deleting.title}”. Esta acción no se puede deshacer.` : ''}
       </ConfirmDialog>
     </>
   )

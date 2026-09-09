@@ -35,12 +35,14 @@ export function ConfirmDialog({
   children,
   onCancel,
   onConfirm,
+  busy = false,
 }: {
   open: boolean
   title: string
   children: ReactNode
   onCancel: () => void
   onConfirm: () => void
+  busy?: boolean
 }) {
   if (!open) return null
   return (
@@ -49,11 +51,11 @@ export function ConfirmDialog({
         <h2 id="dialog-title">{title}</h2>
         <p>{children}</p>
         <div className="actions">
-          <button className="button secondary" onClick={onCancel}>
+          <button className="button secondary" onClick={onCancel} disabled={busy}>
             Cancelar
           </button>
-          <button className="button danger" onClick={onConfirm}>
-            Eliminar
+          <button className="button danger" onClick={onConfirm} disabled={busy}>
+            {busy ? 'Eliminando…' : 'Eliminar'}
           </button>
         </div>
       </div>

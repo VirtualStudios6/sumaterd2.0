@@ -24,7 +24,9 @@ export function ArticleMeta({ article }: { article: Article }) {
 }
 export function ArticleCard({ article, compact = false }: { article: Article; compact?: boolean }) {
   return (
-    <article className={compact ? 'article-card compact' : 'article-card'}>
+    <article
+      className={`article-card${compact ? ' compact' : ''}${article.coverImage ? '' : ' text-only'}`}
+    >
       {article.coverImage && (
         <Link to={`/articulo/${article.slug}`} className="card-image">
           <img

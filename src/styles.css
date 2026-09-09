@@ -547,6 +547,14 @@ img {
   padding: 26px 0;
   border-bottom: 1px solid var(--line);
 }
+.article-card.text-only {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 800px;
+}
+.article-card.text-only > div {
+  border-left: 3px solid var(--red);
+  padding-left: 18px;
+}
 .article-card.compact {
   display: block;
   padding-top: 0;
