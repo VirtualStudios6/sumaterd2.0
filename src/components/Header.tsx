@@ -1,5 +1,5 @@
 import { Menu, Search, UserRound, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../app/AuthProvider'
 import { CATEGORIES } from '../lib/constants'
@@ -9,6 +9,18 @@ import { Brand } from './Brand'
 export function Header() {
   const [open, setOpen] = useState(false)
   const { user } = useAuth()
+  useEffect(() => {
+    if (!open) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [open])
   return (
     <header className="site-header">
       <div className="topline">
@@ -63,30 +75,42 @@ export function Header() {
         </div>
       </div>
       {open && (
-        <div className="mobile-drawer" role="dialog" aria-modal="true" aria-label="Menú">
-          <div className="drawer-head">
-            <Brand />
-            <button className="icon-button" onClick={() => setOpen(false)} aria-label="Cerrar menú">
-              <X />
-            </button>
+        <div className="mobile-menu-layer" onClick={() => setOpen(false)}>
+          <div
+            className="mobile-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="drawer-head">
+              <Brand />
+              <button
+                className="icon-button"
+                onClick={() => setOpen(false)}
+                aria-label="Cerrar menú"
+              >
+                <X />
+              </button>
+            </div>
+            <nav onClick={() => setOpen(false)}>
+              <NavLink to="/">Inicio</NavLink>
+              {CATEGORIES.map((c) => (
+                <NavLink key={c.slug} to={`/categoria/${c.slug}`}>
+                  {c.name}
+                </NavLink>
+              ))}
+              <hr />
+              {user ? (
+                <Link to="/perfil">Mi perfil</Link>
+              ) : (
+                <>
+                  <Link to="/login">Iniciar sesión</Link>
+                  <Link to="/registro">Crear cuenta</Link>
+                </>
+              )}
+            </nav>
           </div>
-          <nav onClick={() => setOpen(false)}>
-            <NavLink to="/">Inicio</NavLink>
-            {CATEGORIES.map((c) => (
-              <NavLink key={c.slug} to={`/categoria/${c.slug}`}>
-                {c.name}
-              </NavLink>
-            ))}
-            <hr />
-            {user ? (
-              <Link to="/perfil">Mi perfil</Link>
-            ) : (
-              <>
-                <Link to="/login">Iniciar sesión</Link>
-                <Link to="/registro">Crear cuenta</Link>
-              </>
-            )}
-          </nav>
         </div>
       )}
     </header>

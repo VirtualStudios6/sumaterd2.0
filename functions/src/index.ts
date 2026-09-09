@@ -179,6 +179,21 @@ export const deleteOwnAccount = onCall({ cors: true }, async (request) => {
   return { deleted: true }
 })
 
+export const deleteOwnForumPost = onCall({ cors: true }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Inicia sesión para eliminar tu tema.')
+  const postId = cleanText(request.data?.postId, 128)
+  if (!postId) throw new HttpsError('invalid-argument', 'Conversación requerida.')
+
+  const postRef = db.doc(`forumPosts/${postId}`)
+  const post = await postRef.get()
+  if (!post.exists) throw new HttpsError('not-found', 'La conversación ya no existe.')
+  if (post.get('authorId') !== request.auth.uid)
+    throw new HttpsError('permission-denied', 'Solo puedes eliminar tus propios temas.')
+
+  await db.recursiveDelete(postRef)
+  return { deleted: true }
+})
+
 export const adminArticles = onCall({ cors: true }, async (request) => {
   await assertAdmin(request)
   const action = request.data?.action

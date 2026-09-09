@@ -8,7 +8,8 @@ import {
   serverTimestamp,
   where,
 } from 'firebase/firestore'
-import { db } from '../firebase/client'
+import { httpsCallable } from 'firebase/functions'
+import { db, functions } from '../firebase/client'
 import type { ForumPost, ForumReply, ForumTopic } from '../types'
 
 export async function getForumPosts() {
@@ -40,6 +41,14 @@ export async function createForumPost(input: {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
+}
+
+export async function deleteOwnForumPost(postId: string) {
+  const call = httpsCallable<{ postId: string }, { deleted: boolean }>(
+    functions,
+    'deleteOwnForumPost',
+  )
+  await call({ postId })
 }
 
 export async function getForumReplies(postId: string) {

@@ -937,13 +937,23 @@ img {
   font-size: 12px;
   color: #9da8b4;
 }
-.mobile-drawer {
+.mobile-menu-layer {
   position: fixed;
   inset: 0;
-  background: white;
+  display: flex;
+  justify-content: flex-end;
+  background: rgb(0 21 45 / 46%);
   z-index: 100;
+  animation: fade-in 0.2s ease-out both;
+}
+.mobile-drawer {
+  width: min(88vw, 390px);
+  height: 100dvh;
+  overflow-y: auto;
   padding: 20px;
-  animation: panel-open 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  background: white;
+  box-shadow: -18px 0 50px rgb(0 20 43 / 20%);
+  animation: drawer-slide-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .drawer-head {
   display: flex;
@@ -960,6 +970,9 @@ img {
 .mobile-drawer nav a {
   font: 780 26px var(--font-display);
   padding: 13px 2px;
+}
+.mobile-drawer nav a.active {
+  color: var(--red);
 }
 .mobile-drawer hr {
   width: 100%;
@@ -2869,6 +2882,24 @@ main > * {
     transform: translateY(0);
   }
 }
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drawer-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
 @keyframes hero-image-arrive {
   from {
     opacity: 0.6;
@@ -3057,6 +3088,30 @@ main > * {
 .forum-conversation-button svg {
   width: 18px;
 }
+.forum-thread-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 22px;
+}
+.forum-thread-actions .forum-conversation-button {
+  margin-top: 0;
+}
+.forum-delete-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  padding: 7px 0;
+  color: #a61925;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 800;
+}
+.forum-delete-button svg {
+  width: 16px;
+}
 .forum-replies {
   margin-top: 15px;
   padding-top: 22px;
@@ -3231,6 +3286,11 @@ main > * {
   .forum-sidebar {
     position: static;
     grid-row: 1;
+  }
+  .forum-thread-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
   }
 }
 @media (max-width: 640px) {

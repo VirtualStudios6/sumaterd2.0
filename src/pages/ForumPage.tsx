@@ -1,12 +1,13 @@
-import { MessageCircle, PenLine, Send, ShieldCheck, UsersRound } from 'lucide-react'
+import { MessageCircle, PenLine, Send, ShieldCheck, Trash2, UsersRound } from 'lucide-react'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../app/AuthProvider'
-import { EmptyState, ErrorState } from '../components/Ui'
+import { ConfirmDialog, EmptyState, ErrorState } from '../components/Ui'
 import {
   createForumPost,
   createForumReply,
+  deleteOwnForumPost,
   getForumPosts,
   getForumReplies,
 } from '../services/forum'
@@ -29,13 +30,23 @@ function readableDate(value: ForumPost['createdAt']) {
     : 'Ahora'
 }
 
-function ForumThread({ post, authorName }: { post: ForumPost; authorName: string }) {
+function ForumThread({
+  post,
+  authorName,
+  onDeleted,
+}: {
+  post: ForumPost
+  authorName: string
+  onDeleted: () => Promise<void>
+}) {
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const [replies, setReplies] = useState<ForumReply[]>([])
   const [reply, setReply] = useState('')
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
 
   const openConversation = async () => {
@@ -72,6 +83,22 @@ function ForumThread({ post, authorName }: { post: ForumPost; authorName: string
     }
   }
 
+  const removePost = async () => {
+    setDeleting(true)
+    setError('')
+    try {
+      await deleteOwnForumPost(post.id)
+      setConfirmingDelete(false)
+      await onDeleted()
+    } catch {
+      setError('No pudimos eliminar tu tema. Intenta nuevamente.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const isAuthor = user?.uid === post.authorId
+
   return (
     <article className="forum-thread">
       <div className="forum-thread-head">
@@ -83,10 +110,17 @@ function ForumThread({ post, authorName }: { post: ForumPost; authorName: string
       <h2>{post.title}</h2>
       <p className="forum-author">Por {post.authorName}</p>
       <p className="forum-body">{post.content}</p>
-      <button className="forum-conversation-button" onClick={() => void openConversation()}>
-        <MessageCircle aria-hidden="true" />
-        {open ? 'Cerrar conversación' : 'Ver conversación'}
-      </button>
+      <div className="forum-thread-actions">
+        <button className="forum-conversation-button" onClick={() => void openConversation()}>
+          <MessageCircle aria-hidden="true" />
+          {open ? 'Cerrar conversación' : 'Ver conversación'}
+        </button>
+        {isAuthor && (
+          <button className="forum-delete-button" onClick={() => setConfirmingDelete(true)}>
+            <Trash2 aria-hidden="true" /> Eliminar mi tema
+          </button>
+        )}
+      </div>
       {open && (
         <div className="forum-replies">
           <h3>Respuestas</h3>
@@ -136,6 +170,15 @@ function ForumThread({ post, authorName }: { post: ForumPost; authorName: string
           )}
         </div>
       )}
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="¿Eliminar tu tema?"
+        onCancel={() => setConfirmingDelete(false)}
+        onConfirm={() => void removePost()}
+        busy={deleting}
+      >
+        También se eliminarán sus respuestas. Esta acción no se puede deshacer.
+      </ConfirmDialog>
     </article>
   )
 }
@@ -235,7 +278,12 @@ export function ForumPage() {
           ) : posts.length ? (
             <div className="forum-thread-list">
               {posts.map((post) => (
-                <ForumThread post={post} authorName={authorName} key={post.id} />
+                <ForumThread
+                  post={post}
+                  authorName={authorName}
+                  onDeleted={loadPosts}
+                  key={post.id}
+                />
               ))}
             </div>
           ) : (
