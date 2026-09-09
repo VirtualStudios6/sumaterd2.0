@@ -23,6 +23,14 @@ export function Footer() {
           <Link to="/sobre-nosotros">Sobre nosotros</Link>
           <Link to="/privacidad">Privacidad</Link>
           <Link to="/contacto">Contacto</Link>
+          <a
+            href="https://www.instagram.com/tu.sumaterd?stkn=MXc1Mm1zMnZoYnNqNw=="
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Instagram de SumateRD (se abre en una pestaña nueva)"
+          >
+            Instagram
+          </a>
         </nav>
       </div>
       <div className="container footer-bottom">
