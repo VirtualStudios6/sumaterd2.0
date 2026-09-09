@@ -27,10 +27,7 @@ async function verifyAdmin(user: User) {
   const token = await getIdTokenResult(user, true)
   const profile = token.claims.admin === true ? null : await getDoc(doc(db, 'users', user.uid))
   const permitted = token.claims.admin === true || profile?.data()?.isAdmin === true
-  if (!permitted) {
-    await signOut(auth)
-    throw new Error('Esta cuenta no tiene permisos administrativos.')
-  }
+  if (!permitted) throw new Error('Esta cuenta no tiene permisos administrativos.')
 }
 
 export function AdminProvider({ children }: { children: ReactNode }) {
