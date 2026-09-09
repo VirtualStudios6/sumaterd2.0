@@ -191,7 +191,7 @@ describe('Functions del CMS en Emulator Suite', () => {
     }>('adminChangeInterests', { action: 'list' })
     expect(updated.interests.find((item) => item.id === interest?.id)?.status).toBe('contacted')
   })
-  it('crea borrador, garantiza slug único, publica, lista y elimina', async () => {
+  it('crea borrador, garantiza slug único, publica sin portada, lista y elimina', async () => {
     const first = await callable<{ id: string; slug: string }>('adminArticles', {
       action: 'save',
       article: {
@@ -230,8 +230,6 @@ describe('Functions del CMS en Emulator Suite', () => {
         slug: first.slug,
         summary: 'Resumen',
         content: 'Contenido actualizado',
-        coverImage: 'https://example.test/portada.webp',
-        coverImageAlt: 'Descripción de la portada',
         category: 'actualidad',
         tags: ['prueba'],
         keywords: ['prueba'],

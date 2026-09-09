@@ -64,13 +64,13 @@ export function ArticlePage() {
       </div>
     )
   const url = `${SITE_URL}/articulo/${article.slug}`
-  const image = article.coverImage || `${SITE_URL}/brand/logo.png`
+  const image = article.coverImage || ''
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: article.title,
     description: article.summary,
-    image: [image],
+    ...(image ? { image: [image] } : {}),
     datePublished: toDate(article.publishedAt)?.toISOString(),
     dateModified: toDate(article.updatedAt)?.toISOString(),
     author: { '@type': 'Person', name: article.authorName },
@@ -85,9 +85,9 @@ export function ArticlePage() {
         <meta property="og:type" content="article" />
         <meta property="og:title" content={article.seoTitle || article.title} />
         <meta property="og:description" content={article.seoDescription || article.summary} />
-        <meta property="og:image" content={image} />
+        {image && <meta property="og:image" content={image} />}
         <meta property="og:url" content={url} />
-        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
         <script type="application/ld+json">{JSON.stringify(schema)}</script>
       </Helmet>
       <header className="article-header container narrow">

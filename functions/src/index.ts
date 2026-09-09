@@ -222,13 +222,10 @@ export const adminArticles = onCall({ cors: true }, async (request) => {
   const coverImage = cleanText(input.coverImage, 2000)
   const coverImageAlt = cleanText(input.coverImageAlt, 240)
   const category = cleanText(input.category, 40)
-  if (
-    status === 'published' &&
-    (!summary || !content || !coverImage || !coverImageAlt || !category)
-  )
+  if (status === 'published' && (!summary || !content || !category))
     throw new HttpsError(
       'failed-precondition',
-      'Completa resumen, contenido, categoría, portada y texto alternativo antes de publicar.',
+      'Completa resumen, contenido y categoría antes de publicar.',
     )
   const resultSlug = await db.runTransaction(async (tx) => {
     let candidate = desiredSlug

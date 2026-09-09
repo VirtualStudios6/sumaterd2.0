@@ -109,12 +109,6 @@ export function ArticleEditorPage() {
         ...draft,
         id: draft.id || id || ownerId,
         status,
-        ...(status === 'published' && !draft.coverImage
-          ? {
-              coverImage: `${window.location.origin}${import.meta.env.BASE_URL}brand/logo.png`,
-              coverImageAlt: 'Logo de SumateRD',
-            }
-          : {}),
         slug: slugify(draft.slug),
         tags: normalizeTags(draft.tags),
         keywords: keywordsFrom(draft.title, draft.summary, draft.tags),

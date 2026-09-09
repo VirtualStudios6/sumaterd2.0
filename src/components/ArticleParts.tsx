@@ -23,13 +23,19 @@ export function ArticleMeta({ article }: { article: Article }) {
   )
 }
 export function ArticleCard({ article, compact = false }: { article: Article; compact?: boolean }) {
-  const image = article.coverImage || `${import.meta.env.BASE_URL}brand/logo.png`
-  const imageAlt = article.coverImageAlt || 'Logo de SumateRD'
   return (
     <article className={compact ? 'article-card compact' : 'article-card'}>
-      <Link to={`/articulo/${article.slug}`} className="card-image">
-        <img src={image} alt={imageAlt} loading="lazy" width="900" height="560" />
-      </Link>
+      {article.coverImage && (
+        <Link to={`/articulo/${article.slug}`} className="card-image">
+          <img
+            src={article.coverImage}
+            alt={article.coverImageAlt}
+            loading="lazy"
+            width="900"
+            height="560"
+          />
+        </Link>
+      )}
       <div>
         <CategoryBadge category={article.category} />
         <h3>
