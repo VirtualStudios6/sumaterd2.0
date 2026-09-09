@@ -161,15 +161,15 @@ Firebase Hosting no es requisito y no se usa para el frontend principal.
 
 ## GitHub Pages
 
-Cada cambio publicado en `main` ejecuta `.github/workflows/pages.yml`, compila la aplicación y despliega `dist/` en GitHub Pages. La configuración usa `/sumaterd2.0/` como ruta base y genera `404.html` para conservar las rutas de la SPA al abrirlas o actualizarlas directamente.
+Cada cambio publicado en `main` ejecuta `.github/workflows/pages.yml`, compila la aplicación y despliega `dist/` en GitHub Pages. La configuración usa `/` como ruta base para el dominio personalizado y genera `404.html` para conservar las rutas de la SPA al abrirlas o actualizarlas directamente.
 
 URL del proyecto:
 
 ```text
-https://virtualstudios6.github.io/sumaterd2.0/
+https://sumaterd.do/
 ```
 
-Para que el acceso con Google funcione desde esa dirección, añade `virtualstudios6.github.io` en Firebase Authentication > Settings > Authorized domains.
+Para que el acceso con Google funcione desde esa dirección, añade `sumaterd.do` en Firebase Authentication > Settings > Authorized domains.
 
 ## Seguridad y operación
 

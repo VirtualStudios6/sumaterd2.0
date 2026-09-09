@@ -6,12 +6,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const siteUrl = (env.VITE_SITE_URL || 'http://localhost:5173').replace(/\/$/, '')
-  const base = `/${(env.VITE_BASE_PATH || '').replace(/^\/+|\/+$/g, '')}`.replace(/^\/$/, '/')
-  const normalizedBase = base === '/' ? '/' : `${base}/`
-  const routePrefix = normalizedBase === '/' ? '' : normalizedBase.slice(0, -1)
+  const base = '/'
+  const routePrefix = ''
   const categories = ['opinion', 'sociedad', 'cambio']
   return {
-    base: normalizedBase,
+    base,
     build: {
       rollupOptions: {
         output: {

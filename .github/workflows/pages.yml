@@ -18,8 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      VITE_BASE_PATH: /sumaterd2.0/
-      VITE_SITE_URL: https://virtualstudios6.github.io/sumaterd2.0
+      VITE_SITE_URL: https://sumaterd.do
       VITE_FIREBASE_API_KEY: AIzaSyBKCWVjYAwtF1FY073m9646RCI3duP6EVM
       VITE_FIREBASE_AUTH_DOMAIN: sumaterd-da931.firebaseapp.com
       VITE_FIREBASE_PROJECT_ID: sumaterd-da931
@@ -48,6 +47,8 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Build
         run: npm run build
+      - name: Verify custom domain file
+        run: test "$(tr -d '\r\n' < dist/CNAME)" = "sumaterd.do"
       - name: Add SPA fallback
         run: |
           cp dist/index.html dist/404.html
