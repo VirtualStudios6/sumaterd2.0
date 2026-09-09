@@ -405,6 +405,7 @@ img {
   font: 820 clamp(38px, 5vw, 66px)/1.04 var(--font-display);
   letter-spacing: -0.035em;
   margin: 10px 0 18px;
+  overflow-wrap: anywhere;
 }
 .hero-content > p:not(.eyebrow) {
   font-size: 18px;
@@ -933,6 +934,7 @@ img {
   background: white;
   z-index: 100;
   padding: 20px;
+  animation: panel-open 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .drawer-head {
   display: flex;
@@ -1967,6 +1969,7 @@ img {
   background: white;
   border-top: 4px solid var(--blue);
   width: min(100%, 460px);
+  max-width: 100%;
   padding: 40px;
 }
 .admin-login h1 {
@@ -2364,6 +2367,7 @@ img {
     background: #111820;
     z-index: 150;
     padding: 18px;
+    animation: panel-open 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .admin-mobile-nav > button {
     display: block;
@@ -2447,6 +2451,9 @@ img {
   }
 }
 @media (max-width: 420px) {
+  .admin-login > div {
+    padding: 32px 24px;
+  }
   .secondary-stories {
     grid-template-columns: 1fr;
   }

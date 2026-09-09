@@ -19,6 +19,28 @@ const genericError = new Error('Los datos introducidos no son correctos.')
 const googleProvider = new GoogleAuthProvider()
 googleProvider.setCustomParameters({ prompt: 'select_account' })
 
+function googleSignInError(error: unknown) {
+  const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : ''
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return null
+  if (code === 'auth/account-exists-with-different-credential')
+    return new Error('Este correo ya está registrado. Inicia sesión con tu contraseña.')
+  if (code === 'auth/popup-blocked')
+    return new Error(
+      'El navegador bloqueó la ventana de Google. Permite las ventanas emergentes e intenta nuevamente.',
+    )
+  if (code === 'auth/unauthorized-domain')
+    return new Error(
+      'El acceso con Google no está habilitado para este dominio. Intenta nuevamente en unos minutos.',
+    )
+  if (code === 'auth/operation-not-allowed')
+    return new Error(
+      'El acceso con Google no está disponible temporalmente. Intenta nuevamente más tarde.',
+    )
+  if (code === 'auth/network-request-failed')
+    return new Error('No pudimos conectar con Google. Revisa tu conexión e intenta nuevamente.')
+  return new Error('No pudimos iniciar sesión con Google. Intenta nuevamente.')
+}
+
 export async function registerUser(input: {
   fullName: string
   cedula: string
@@ -73,7 +95,19 @@ export async function signInWithGoogle() {
     return credential
   } catch (error) {
     const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : ''
-    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return null
+    const signInError = googleSignInError(error)
+    if (!signInError) return null
+    if (
+      [
+        'auth/popup-blocked',
+        'auth/unauthorized-domain',
+        'auth/operation-not-allowed',
+        'auth/network-request-failed',
+      ].includes(code)
+    ) {
+      await signOut(auth).catch(() => undefined)
+      throw signInError
+    }
     if (code === 'auth/account-exists-with-different-credential') {
       throw new Error('Este correo ya está registrado. Inicia sesión con tu contraseña.')
     }
