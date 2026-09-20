@@ -1,4 +1,4 @@
-import { Menu, Search, UserRound, X } from 'lucide-react'
+import { Facebook, Instagram, Menu, Search, UserRound, X, Youtube } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../app/AuthProvider'
@@ -73,6 +73,41 @@ export function Header() {
             </>
           )}
         </div>
+      </div>
+      <div className="social-strip">
+        <a
+          className="social-strip-icon instagram"
+          href="https://www.instagram.com/tu.sumaterd?stkn=MXc1Mm1zMnZoYnNqNw=="
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Instagram de SumateRD (se abre en una pestaña nueva)"
+        >
+          <Instagram />
+        </a>
+        <a
+          className="social-strip-icon facebook"
+          href="#"
+          onClick={(event) => event.preventDefault()}
+          aria-label="Facebook de SumateRD (próximamente)"
+        >
+          <Facebook />
+        </a>
+        <a
+          className="social-strip-icon x"
+          href="#"
+          onClick={(event) => event.preventDefault()}
+          aria-label="X de SumateRD (próximamente)"
+        >
+          <X />
+        </a>
+        <a
+          className="social-strip-icon youtube"
+          href="#"
+          onClick={(event) => event.preventDefault()}
+          aria-label="YouTube de SumateRD (próximamente)"
+        >
+          <Youtube />
+        </a>
       </div>
       {open && (
         <div className="mobile-menu-layer" onClick={() => setOpen(false)}>

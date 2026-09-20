@@ -1,3 +1,4 @@
+import { AlertTriangle, Inbox, Info } from 'lucide-react'
 import type { ReactNode } from 'react'
 export function Spinner({ label = 'Cargando' }: { label?: string }) {
   return (
@@ -10,6 +11,7 @@ export function Spinner({ label = 'Cargando' }: { label?: string }) {
 export function EmptyState({ title, message }: { title: string; message: string }) {
   return (
     <div className="empty">
+      <Inbox aria-hidden="true" />
       <h2>{title}</h2>
       <p>{message}</p>
     </div>
@@ -18,6 +20,7 @@ export function EmptyState({ title, message }: { title: string; message: string 
 export function ErrorState({ message }: { message: string }) {
   return (
     <div className="notice error" role="alert">
+      <AlertTriangle aria-hidden="true" />
       {message}
     </div>
   )
@@ -25,7 +28,8 @@ export function ErrorState({ message }: { message: string }) {
 export function Notice({ children }: { children: ReactNode }) {
   return (
     <div className="notice" role="status">
-      {children}
+      <Info aria-hidden="true" />
+      <span>{children}</span>
     </div>
   )
 }

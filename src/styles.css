@@ -11,6 +11,12 @@
   --muted: #6b7280;
   --font-sans: 'Nunito Sans Variable', 'Nunito Sans', 'Segoe UI', sans-serif;
   --font-display: 'Nunito Sans Variable', 'Nunito Sans', 'Segoe UI', sans-serif;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-sm: 0 4px 14px rgb(15 30 50 / 8%);
+  --shadow-md: 0 14px 34px rgb(15 30 50 / 14%);
+  --shadow-lg: 0 24px 60px rgb(10 22 40 / 22%);
+  --radius-sm: 8px;
+  --radius-md: 14px;
 }
 * {
   box-sizing: border-box;
@@ -132,7 +138,50 @@ img {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   display: flex;
+  align-items: center;
   justify-content: space-between;
+}
+.social-strip {
+  background: white;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 10px 0;
+}
+.social-strip-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: currentColor;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.social-strip-icon svg {
+  width: 18px;
+  height: 18px;
+  color: white;
+  stroke: white;
+}
+.social-strip-icon:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+.social-strip-icon.instagram {
+  color: #d6249f;
+  background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+}
+.social-strip-icon.facebook {
+  color: #1877f2;
+}
+.social-strip-icon.x {
+  color: #000000;
+}
+.social-strip-icon.youtube {
+  color: #ff0000;
 }
 .site-header {
   background: white;
@@ -212,6 +261,9 @@ img {
 .button:hover {
   background: #001f45;
 }
+.button:active {
+  transform: translateY(0) scale(0.97);
+}
 .button.small {
   min-height: 40px;
 }
@@ -224,12 +276,41 @@ img {
   background: white;
   color: var(--blue);
 }
+.button.secondary:hover {
+  background: #eef4fb;
+}
 .button.danger {
   background: var(--red);
   border-color: var(--red);
 }
+.button.danger:hover {
+  background: #a80e1f;
+}
 .button.full {
   width: 100%;
+}
+.button:focus-visible,
+.icon-button:focus-visible,
+.text-button:focus-visible,
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.button:disabled,
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.icon-button {
+  border-radius: 50%;
+}
+.icon-button:hover {
+  background: rgb(0 45 98 / 8%);
 }
 .page-transition-splash {
   position: fixed;
@@ -876,6 +957,27 @@ img {
   padding: 70px 20px;
   text-align: center;
   color: var(--muted);
+  animation: fade-in 0.3s ease-out both;
+}
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+.empty svg {
+  width: 34px;
+  height: 34px;
+  color: #b7c0cb;
+  margin-bottom: 4px;
+}
+.empty h2 {
+  margin: 0;
+  color: #171717;
+  font: 780 20px var(--font-display);
+}
+.empty p {
+  margin: 0;
+  max-width: 420px;
 }
 .spinner {
   display: inline-block;
@@ -894,16 +996,31 @@ img {
   }
 }
 .notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   border-left: 3px solid var(--blue);
   background: #eef4fb;
   padding: 13px 15px;
   margin: 12px 0;
   font-size: 14px;
+  border-radius: 0 6px 6px 0;
+  animation: content-rise 0.3s var(--ease-out) both;
+}
+.notice svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--blue);
 }
 .notice.error {
   border-color: var(--red);
   background: #fff0f1;
   color: #8b0c1b;
+}
+.notice.error svg {
+  color: var(--red);
 }
 .footer {
   background: #111820;
@@ -1421,10 +1538,23 @@ img {
   gap: 12px;
   padding: 11px 12px;
   border: 0;
+  border-radius: 8px;
   background: transparent;
   color: #cdd5df;
   font-size: 14px;
   text-align: left;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+.admin-sidebar nav a:hover,
+.admin-sidebar > button:hover {
+  background: #1c2634;
+  color: white;
+}
+.admin-sidebar > button:active {
+  transform: scale(0.98);
 }
 .admin-sidebar nav a.active {
   background: #253344;
@@ -1433,6 +1563,10 @@ img {
 }
 .admin-sidebar svg {
   width: 18px;
+  transition: transform 0.18s ease;
+}
+.admin-sidebar nav a:hover svg {
+  transform: translateX(2px);
 }
 .admin-sidebar > button {
   margin-top: auto;
@@ -1819,6 +1953,7 @@ img {
   display: grid;
   place-items: center;
   padding: 20px;
+  animation: fade-in 0.18s ease-out both;
 }
 .modal {
   background: white;
@@ -1826,6 +1961,9 @@ img {
   padding: 28px;
   max-height: 90vh;
   overflow: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  animation: panel-open 0.24s var(--ease-out) both;
 }
 .modal.wide {
   width: min(100%, 680px);
@@ -2395,8 +2533,13 @@ img {
     margin-left: auto;
     background: transparent;
     border: 0;
+    border-radius: 50%;
     color: white;
     padding: 10px;
+    transition: background-color 0.18s ease;
+  }
+  .admin-mobile-nav > button:hover {
+    background: rgb(255 255 255 / 10%);
   }
   .admin-mobile-nav nav {
     display: grid;
@@ -2408,6 +2551,11 @@ img {
     color: white;
     padding: 15px;
     font-size: 19px;
+    border-radius: 8px;
+    transition: background-color 0.18s ease;
+  }
+  .admin-mobile-nav a:hover {
+    background: rgb(255 255 255 / 8%);
   }
   .admin-title {
     align-items: center;
@@ -3036,6 +3184,15 @@ main > * {
   background: white;
   box-shadow: 0 12px 35px rgb(17 24 39 / 5%);
   animation: content-rise 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    box-shadow 0.22s ease,
+    transform 0.22s ease;
+}
+@media (hover: hover) {
+  .forum-thread:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px rgb(17 24 39 / 9%);
+  }
 }
 .forum-thread-head {
   display: flex;
@@ -3084,9 +3241,17 @@ main > * {
   color: var(--blue);
   font-size: 14px;
   font-weight: 800;
+  transition: gap 0.18s ease;
 }
 .forum-conversation-button svg {
   width: 18px;
+  transition: transform 0.18s ease;
+}
+.forum-conversation-button:hover {
+  gap: 11px;
+}
+.forum-conversation-button:hover svg {
+  transform: translateX(2px);
 }
 .forum-thread-actions {
   display: flex;
@@ -3108,6 +3273,10 @@ main > * {
   background: transparent;
   font-size: 13px;
   font-weight: 800;
+  transition: opacity 0.18s ease;
+}
+.forum-delete-button:hover {
+  opacity: 0.7;
 }
 .forum-delete-button svg {
   width: 16px;
