@@ -29,7 +29,7 @@ const SOCIAL_LINKS = [
   { label: 'Facebook', href: '', className: 'facebook', icon: <Facebook aria-hidden="true" /> },
   {
     label: 'X',
-    href: '',
+    href: 'https://x.com/tusumaterd',
     className: 'x',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">

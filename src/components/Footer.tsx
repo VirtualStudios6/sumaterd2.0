@@ -11,7 +11,23 @@ const SOCIAL_LINKS = [
     href: 'https://www.instagram.com/tu.sumaterd',
     icon: Instagram,
   },
+  {
+    label: 'X',
+    href: 'https://x.com/tusumaterd',
+    icon: XLogo,
+  },
 ]
+
+function XLogo(props: { 'aria-hidden'?: boolean | 'true' }) {
+  return (
+    <svg viewBox="0 0 24 24" {...props}>
+      <path
+        fill="currentColor"
+        d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.77L17.75 3Zm-1.08 16.2h1.7L7.4 4.72H5.57L16.67 19.2Z"
+      />
+    </svg>
+  )
+}
 
 export function Footer() {
   const { siteName, footerText } = useSiteSettings()
