@@ -1,7 +1,7 @@
 import type { Timestamp } from 'firebase/firestore'
 
 export type ArticleStatus = 'draft' | 'published'
-export type CategorySlug = 'opinion' | 'sociedad' | 'politica' | 'cambio' | 'actualidad'
+export type CategorySlug = 'opinion' | 'sociedad' | 'cultura' | 'politica' | 'cambio' | 'actualidad'
 
 export interface Article {
   id: string

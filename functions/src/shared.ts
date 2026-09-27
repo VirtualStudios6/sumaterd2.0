@@ -5,10 +5,21 @@ import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore'
 import { getStorage } from 'firebase-admin/storage'
 import { HttpsError, type CallableRequest } from 'firebase-functions/v2/https'
 
+// En producción Firebase inyecta el bucket real en FIREBASE_CONFIG (los proyectos
+// nuevos usan <id>.firebasestorage.app, no <id>.appspot.com).
+function configuredBucket() {
+  try {
+    return JSON.parse(process.env.FIREBASE_CONFIG || '{}').storageBucket as string | undefined
+  } catch {
+    return undefined
+  }
+}
+
 if (!getApps().length)
   initializeApp({
     storageBucket:
       process.env.FIREBASE_STORAGE_BUCKET ||
+      configuredBucket() ||
       `${process.env.GCLOUD_PROJECT || 'demo-sumaterd'}.appspot.com`,
   })
 export const adminAuth = getAuth()

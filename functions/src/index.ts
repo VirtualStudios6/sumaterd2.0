@@ -587,7 +587,7 @@ export const sitemap = onRequest({ cors: true }, async (_request, response) => {
     .where('status', '==', 'published')
     .orderBy('publishedAt', 'desc')
     .get()
-  const publicCategories = ['opinion', 'sociedad', 'cambio']
+  const publicCategories = ['opinion', 'sociedad', 'cultura', 'cambio']
   const fixed = ['', ...publicCategories.map((c) => `/categoria/${c}`)]
   const urls = [
     ...fixed.map((path) => ({ loc: `${site}${path}`, lastmod: '' })),

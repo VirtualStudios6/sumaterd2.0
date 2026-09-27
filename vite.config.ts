@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const siteUrl = (env.VITE_SITE_URL || 'http://localhost:5173').replace(/\/$/, '')
   const base = '/'
   const routePrefix = ''
-  const categories = ['opinion', 'sociedad', 'cambio']
+  const categories = ['opinion', 'sociedad', 'cultura', 'cambio']
   return {
     base,
     build: {

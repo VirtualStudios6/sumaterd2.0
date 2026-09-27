@@ -1,10 +1,47 @@
-import { Home, LogOut, Menu, MessageCircle, Search, UserRound, Vote, X } from 'lucide-react'
+import {
+  Facebook,
+  Home,
+  Instagram,
+  LogOut,
+  Menu,
+  MessageCircle,
+  Search,
+  UserRound,
+  Vote,
+  X,
+  Youtube,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../app/AuthProvider'
 import { CATEGORIES } from '../lib/constants'
 import { logoutUser } from '../services/auth'
 import { Brand } from './Brand'
+
+// Para activar una red, pon su URL en `href`.
+const SOCIAL_LINKS = [
+  {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/tu.sumaterd',
+    className: 'instagram',
+    icon: <Instagram aria-hidden="true" />,
+  },
+  { label: 'Facebook', href: '', className: 'facebook', icon: <Facebook aria-hidden="true" /> },
+  {
+    label: 'X',
+    href: '',
+    className: 'x',
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.77L17.75 3Zm-1.08 16.2h1.7L7.4 4.72H5.57L16.67 19.2Z"
+        />
+      </svg>
+    ),
+  },
+  { label: 'YouTube', href: '', className: 'youtube', icon: <Youtube aria-hidden="true" /> },
+]
 
 export function Header() {
   const [open, setOpen] = useState(false)
@@ -76,6 +113,25 @@ export function Header() {
             <Menu />
           </button>
         </div>
+      </div>
+      <div className="social-strip">
+        {SOCIAL_LINKS.map(({ label, href, className, icon }) => (
+          <a
+            key={label}
+            className={`social-strip-icon ${className}`}
+            href={href || '#'}
+            onClick={href ? undefined : (event) => event.preventDefault()}
+            target={href ? '_blank' : undefined}
+            rel={href ? 'noreferrer' : undefined}
+            aria-label={
+              href
+                ? `${label} de SumateRD (se abre en una pestaña nueva)`
+                : `${label} de SumateRD (próximamente)`
+            }
+          >
+            {icon}
+          </a>
+        ))}
       </div>
       {open && (
         <div className="mobile-menu-layer" onClick={() => setOpen(false)}>

@@ -132,6 +132,7 @@ export function HomePage() {
   const categoryDetails: Record<string, string> = {
     opinion: 'Un foro abierto para conversar con respeto.',
     sociedad: 'Historias sobre comunidades y vida cotidiana.',
+    cultura: 'Arte, música, tradiciones e identidad dominicana.',
     cambio: 'Ideas y participación para construir una nueva opción.',
   }
   return (

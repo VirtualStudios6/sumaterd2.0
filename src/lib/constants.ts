@@ -3,6 +3,7 @@ import type { CategorySlug } from '../types'
 export const CATEGORIES: Array<{ name: string; slug: CategorySlug }> = [
   { name: 'Opinión', slug: 'opinion' },
   { name: 'Sociedad', slug: 'sociedad' },
+  { name: 'Cultura', slug: 'cultura' },
   { name: 'Cambio', slug: 'cambio' },
 ]
 

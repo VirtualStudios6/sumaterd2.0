@@ -780,3 +780,58 @@ body {
   margin: auto;
   border-radius: 18px;
 }
+
+/* Social strip under the header */
+.social-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 8px 0 10px;
+}
+.social-strip-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: white;
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+.social-strip-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.social-strip-icon:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+.social-strip-icon.instagram {
+  background: radial-gradient(
+    circle at 30% 110%,
+    #fdf497 0%,
+    #fd5949 45%,
+    #d6249f 60%,
+    #285aeb 90%
+  );
+}
+.social-strip-icon.facebook {
+  background: #1877f2;
+}
+.social-strip-icon.x {
+  background: #000;
+}
+.social-strip-icon.youtube {
+  background: #ff0000;
+}
+.site-header.is-scrolled .social-strip {
+  display: none;
+}
+
+@media (min-width: 1001px) {
+  .category-strip > div {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
