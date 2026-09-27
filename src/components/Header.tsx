@@ -40,7 +40,12 @@ const SOCIAL_LINKS = [
       </svg>
     ),
   },
-  { label: 'YouTube', href: '', className: 'youtube', icon: <Youtube aria-hidden="true" /> },
+  {
+    label: 'YouTube',
+    href: 'https://www.youtube.com/@tusumaterd',
+    className: 'youtube',
+    icon: <Youtube aria-hidden="true" />,
+  },
 ]
 
 // Ya están en la barra inferior de la app; no se repiten en el menú lateral.

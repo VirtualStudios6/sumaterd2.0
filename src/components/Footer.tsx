@@ -1,4 +1,4 @@
-import { Instagram } from 'lucide-react'
+import { Instagram, Youtube } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../app/SiteSettingsProvider'
 import { CATEGORIES } from '../lib/constants'
@@ -15,6 +15,11 @@ const SOCIAL_LINKS = [
     label: 'X',
     href: 'https://x.com/tusumaterd',
     icon: XLogo,
+  },
+  {
+    label: 'YouTube',
+    href: 'https://www.youtube.com/@tusumaterd',
+    icon: Youtube,
   },
 ]
 
