@@ -22,7 +22,7 @@ export async function adminCarousel(
 }
 export async function uploadAdminImage(
   file: File,
-  area: 'articles' | 'carousel',
+  area: 'articles' | 'carousel' | 'authors',
   ownerId: string,
   kind = 'cover',
 ) {
@@ -37,7 +37,7 @@ export async function uploadAdminImage(
     .data as { url: string; path: string }
 }
 export async function deleteAdminImage(
-  area: 'articles' | 'carousel',
+  area: 'articles' | 'carousel' | 'authors',
   ownerId: string,
   kind = 'cover',
 ) {

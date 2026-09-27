@@ -26,6 +26,12 @@
   "dependencies": {
     "@fontsource-variable/nunito-sans": "^5.3.0",
     "@tailwindcss/vite": "^4.1.14",
+    "@tiptap/extension-image": "^2.27.3",
+    "@tiptap/extension-link": "^2.27.3",
+    "@tiptap/extension-placeholder": "^2.27.3",
+    "@tiptap/pm": "^2.27.3",
+    "@tiptap/react": "^2.27.3",
+    "@tiptap/starter-kit": "^2.27.3",
     "firebase": "^12.3.0",
     "lucide-react": "^0.544.0",
     "react": "18.3.1",
@@ -34,7 +40,8 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.9.1",
     "rehype-sanitize": "^6.0.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "tiptap-markdown": "^0.8.10"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

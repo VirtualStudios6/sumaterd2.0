@@ -14,7 +14,7 @@ export function ImageUploader({
 }: {
   value: string
   alt: string
-  area: 'articles' | 'carousel'
+  area: 'articles' | 'carousel' | 'authors'
   ownerId: string
   kind?: string
   onChange: (url: string) => void

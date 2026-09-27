@@ -24,6 +24,15 @@ const ChangePage = lazyPage(() =>
 const ArticlePage = lazyPage(() =>
   import('../pages/ArticlePage').then((m) => ({ default: m.ArticlePage })),
 )
+const AuthorPage = lazyPage(() =>
+  import('../pages/AuthorPage').then((m) => ({ default: m.AuthorPage })),
+)
+const AuthorsAdminPage = lazyPage(() =>
+  import('../pages/admin/AuthorsAdminPage').then((m) => ({ default: m.AuthorsAdminPage })),
+)
+const AuthorEditorPage = lazyPage(() =>
+  import('../pages/admin/AuthorEditorPage').then((m) => ({ default: m.AuthorEditorPage })),
+)
 const SearchPage = lazyPage(() =>
   import('../pages/SearchPage').then((m) => ({ default: m.SearchPage })),
 )
@@ -103,6 +112,7 @@ const routes = [
       { path: 'categoria/economia', element: <Navigate to="/categoria/cambio" replace /> },
       { path: 'categoria/:slug', element: wait(<CategoryPage />) },
       { path: 'articulo/:slug', element: wait(<ArticlePage />) },
+      { path: 'autor/:slug', element: wait(<AuthorPage />) },
       { path: 'buscar', element: wait(<SearchPage />) },
       { path: 'login', element: wait(<LoginPage />) },
       { path: 'registro', element: wait(<RegisterPage />) },
@@ -124,6 +134,9 @@ const routes = [
       { path: 'articles/new', element: wait(<ArticleEditorPage />) },
       { path: 'articles/:id/edit', element: wait(<ArticleEditorPage />) },
       { path: 'articles/:id/preview', element: wait(<ArticlePreviewPage />) },
+      { path: 'authors', element: wait(<AuthorsAdminPage />) },
+      { path: 'authors/new', element: wait(<AuthorEditorPage />) },
+      { path: 'authors/:id/edit', element: wait(<AuthorEditorPage />) },
       { path: 'carousel', element: wait(<CarouselAdminPage />) },
       { path: 'forum', element: wait(<ForumAdminPage />) },
       { path: 'users', element: wait(<UsersAdminPage />) },

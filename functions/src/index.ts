@@ -237,6 +237,10 @@ export const adminArticles = onCall({ cors: true }, async (request) => {
   const coverImage = cleanText(input.coverImage, 2000)
   const coverImageAlt = cleanText(input.coverImageAlt, 240)
   const category = cleanText(input.category, 40)
+  const authorProfileId = cleanText(input.authorProfileId, 100)
+  const authorProfile = authorProfileId ? await db.doc(`authors/${authorProfileId}`).get() : null
+  if (authorProfileId && !authorProfile?.exists)
+    throw new HttpsError('invalid-argument', 'El autor seleccionado no existe.')
   if (status === 'published' && (!summary || !content || !category))
     throw new HttpsError(
       'failed-precondition',
@@ -262,7 +266,11 @@ export const adminArticles = onCall({ cors: true }, async (request) => {
       coverImage,
       coverImageAlt,
       authorId: cleanText(input.authorId, 100) || 'editorial',
-      authorName: cleanText(input.authorName, 100) || 'Redacción SumateRD',
+      authorProfileId,
+      authorName:
+        (authorProfile?.get('name') as string | undefined) ||
+        cleanText(input.authorName, 100) ||
+        'Redacción SumateRD',
       category,
       tags: Array.isArray(input.tags)
         ? input.tags.slice(0, 12).map((x: unknown) => cleanText(x, 40))
@@ -285,6 +293,106 @@ export const adminArticles = onCall({ cors: true }, async (request) => {
     return candidate
   })
   return { id, slug: resultSlug }
+})
+
+function imageArea(value: unknown) {
+  return value === 'carousel' || value === 'authors' ? value : 'articles'
+}
+
+function cleanUrl(value: unknown) {
+  const url = cleanText(value, 300)
+  if (!url) return ''
+  const withProtocol = /^https?:\/\//i.test(url) ? url : `https://${url}`
+  try {
+    const parsed = new URL(withProtocol)
+    return ['http:', 'https:'].includes(parsed.protocol) ? parsed.toString() : ''
+  } catch {
+    return ''
+  }
+}
+
+export const adminAuthors = onCall({ cors: true }, async (request) => {
+  await assertAdmin(request)
+  const action = request.data?.action
+  if (action === 'list') {
+    const snap = await db.collection('authors').orderBy('name').get()
+    const authors = await Promise.all(
+      snap.docs.map(async (d) => {
+        const count = await db
+          .collection('articles')
+          .where('authorProfileId', '==', d.id)
+          .where('status', '==', 'published')
+          .count()
+          .get()
+        return { id: d.id, ...serialize(d.data()), publishedCount: count.data().count }
+      }),
+    )
+    return { authors }
+  }
+  if (action === 'get') {
+    const snap = await db.doc(`authors/${cleanText(request.data?.id, 100)}`).get()
+    return { author: snap.exists ? { id: snap.id, ...serialize(snap.data()!) } : null }
+  }
+  if (action === 'delete') {
+    const id = cleanText(request.data?.id, 100)
+    if (!id) throw new HttpsError('invalid-argument', 'ID requerido.')
+    const linked = await db.collection('articles').where('authorProfileId', '==', id).limit(1).get()
+    if (!linked.empty)
+      throw new HttpsError(
+        'failed-precondition',
+        'Este autor tiene artículos. Reasígnalos antes de eliminarlo.',
+      )
+    await db.doc(`authors/${id}`).delete()
+    await bucket.deleteFiles({ prefix: `authors/${id}/` }).catch(() => undefined)
+    return { deleted: true }
+  }
+  if (action !== 'save') throw new HttpsError('invalid-argument', 'Acción inválida.')
+  const input = request.data?.author || {}
+  const id =
+    cleanText(input.id, 100).replace(/[^a-zA-Z0-9_-]/g, '') || db.collection('authors').doc().id
+  const name = cleanText(input.name, 100)
+  if (name.length < 2) throw new HttpsError('invalid-argument', 'El nombre es obligatorio.')
+  const desiredSlug = slugify(cleanText(input.slug, 100) || name)
+  const ref = db.doc(`authors/${id}`)
+  const slug = await db.runTransaction(async (tx) => {
+    let candidate = desiredSlug
+    let suffix = 2
+    while (true) {
+      const collision = await tx.get(
+        db.collection('authors').where('slug', '==', candidate).limit(1),
+      )
+      if (collision.empty || collision.docs[0].id === id) break
+      candidate = `${desiredSlug}-${suffix++}`
+    }
+    const current = await tx.get(ref)
+    const now = FieldValue.serverTimestamp()
+    const socials = input.socials || {}
+    tx.set(
+      ref,
+      {
+        name,
+        slug: candidate,
+        role: cleanText(input.role, 120),
+        bio: cleanText(input.bio, 1500),
+        photoUrl: cleanText(input.photoUrl, 2000),
+        socials: {
+          instagram: cleanUrl(socials.instagram),
+          facebook: cleanUrl(socials.facebook),
+          x: cleanUrl(socials.x),
+          linkedin: cleanUrl(socials.linkedin),
+          website: cleanUrl(socials.website),
+        },
+        updatedAt: now,
+        ...(current.exists ? {} : { createdAt: now }),
+      },
+      { merge: true },
+    )
+    return candidate
+  })
+  // Mantiene el nombre visible de sus artículos al día.
+  const articles = await db.collection('articles').where('authorProfileId', '==', id).get()
+  await Promise.all(articles.docs.map((doc) => doc.ref.update({ authorName: name })))
+  return { id, slug }
 })
 
 export const adminCarousel = onCall({ cors: true }, async (request) => {
@@ -344,7 +452,7 @@ export const adminUploadImage = onCall(
   async (request) => {
     await assertAdmin(request)
     const contentType = cleanText(request.data?.contentType, 50)
-    const area = request.data?.area === 'carousel' ? 'carousel' : 'articles'
+    const area = imageArea(request.data?.area)
     const ownerId = cleanText(request.data?.ownerId, 100).replace(/[^a-zA-Z0-9_-]/g, '')
     const kind = cleanText(request.data?.kind, 30).replace(/[^a-zA-Z0-9_-]/g, '') || 'cover'
     const buffer = Buffer.from(String(request.data?.data || ''), 'base64')
@@ -379,7 +487,7 @@ export const adminUploadImage = onCall(
 
 export const adminDeleteImage = onCall({ cors: true }, async (request) => {
   await assertAdmin(request)
-  const area = request.data?.area === 'carousel' ? 'carousel' : 'articles'
+  const area = imageArea(request.data?.area)
   const ownerId = cleanText(request.data?.ownerId, 100).replace(/[^a-zA-Z0-9_-]/g, '')
   const kind = cleanText(request.data?.kind, 30).replace(/[^a-zA-Z0-9_-]/g, '') || 'cover'
   if (!ownerId) throw new HttpsError('invalid-argument', 'Ruta inválida.')

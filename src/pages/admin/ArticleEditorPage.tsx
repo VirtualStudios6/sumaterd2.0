@@ -1,27 +1,14 @@
-import {
-  ArrowLeft,
-  Bold,
-  Check,
-  Circle,
-  ExternalLink,
-  Eye,
-  Heading2,
-  Heading3,
-  Italic,
-  Link as LinkIcon,
-  List,
-  ListOrdered,
-  Minus,
-  Quote,
-} from 'lucide-react'
+import type { Editor } from '@tiptap/react'
+import { ArrowLeft, Check, Circle, ExternalLink, Eye } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { MarkdownContent } from '../../components/ArticleParts'
+import { RichTextEditor } from '../../components/RichTextEditor'
 import { ErrorState, Spinner } from '../../components/Ui'
 import { ImageUploader } from '../../components/ImageUploader'
 import { CATEGORIES } from '../../lib/constants'
 import { getArticleById, saveAdminArticle } from '../../services/articles'
-import type { Article, ArticleStatus, CategorySlug } from '../../types'
+import { listAdminAuthors } from '../../services/authors'
+import type { Article, ArticleStatus, Author, CategorySlug } from '../../types'
 import { keywordsFrom, normalizeTags, readingTime, slugify } from '../../utils/content'
 
 type Draft = Partial<Article> & {
@@ -62,13 +49,13 @@ export function ArticleEditorPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const temporaryOwnerId = useRef(crypto.randomUUID()).current
-  const contentRef = useRef<HTMLTextAreaElement>(null)
+  const editorRef = useRef<Editor | null>(null)
+  const [authors, setAuthors] = useState<Author[]>([])
   const [draft, setDraft] = useState<Draft>(blank)
   const [contentImageAlt, setContentImageAlt] = useState('')
   const [loading, setLoading] = useState(Boolean(id))
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState('')
-  const [showPreview, setShowPreview] = useState(false)
   const [dirty, setDirty] = useState(false)
   const initialized = useRef(false)
   const ownerId = id || draft.id || temporaryOwnerId
@@ -111,6 +98,14 @@ export function ArticleEditorPage() {
     }, 1200)
     return () => clearTimeout(timer)
   }, [draft, id])
+  useEffect(() => {
+    listAdminAuthors()
+      .then(setAuthors)
+      .catch(() => setAuthors([]))
+  }, [])
+  const onEditorReady = useCallback((editor: Editor) => {
+    editorRef.current = editor
+  }, [])
   useEffect(() => {
     if (!dirty) return
     const warn = (event: BeforeUnloadEvent) => event.preventDefault()
@@ -178,21 +173,6 @@ export function ArticleEditorPage() {
     window.addEventListener('keydown', onShortcut)
     return () => window.removeEventListener('keydown', onShortcut)
   }, [onShortcut])
-  const insertMarkdown = (before: string, after = '', placeholder = 'texto', block = false) => {
-    const element = contentRef.current
-    const start = element?.selectionStart ?? draft.content.length
-    const end = element?.selectionEnd ?? draft.content.length
-    const selected = draft.content.slice(start, end) || placeholder
-    const needsBreak = block && start > 0 && draft.content[start - 1] !== '\n'
-    const prefix = `${needsBreak ? '\n\n' : ''}${before}`
-    const next = `${draft.content.slice(0, start)}${prefix}${selected}${after}${draft.content.slice(end)}`
-    update('content', next)
-    if (!element) return
-    requestAnimationFrame(() => {
-      element.focus()
-      element.setSelectionRange(start + prefix.length, start + prefix.length + selected.length)
-    })
-  }
   const checklist = [
     { label: 'Título', done: Boolean(draft.title.trim()) },
     { label: 'Resumen', done: Boolean(draft.summary.trim()) },
@@ -293,121 +273,11 @@ export function ArticleEditorPage() {
                 {words} palabras · {readingTime(draft.content)} min de lectura
               </small>
             </div>
-            <div className="markdown-toolbar" role="toolbar" aria-label="Formato del artículo">
-              <button
-                type="button"
-                onClick={() => insertMarkdown('## ', '\n', 'Subtítulo', true)}
-                title="Subtítulo"
-                aria-label="Subtítulo"
-                disabled={showPreview}
-              >
-                <Heading2 />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertMarkdown('### ', '\n', 'Apartado', true)}
-                title="Apartado"
-                aria-label="Apartado"
-                disabled={showPreview}
-              >
-                <Heading3 />
-              </button>
-              <span className="toolbar-sep" aria-hidden="true" />
-              <button
-                type="button"
-                onClick={() => insertMarkdown('**', '**')}
-                title="Negrita"
-                aria-label="Negrita"
-                disabled={showPreview}
-              >
-                <Bold />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertMarkdown('_', '_')}
-                title="Cursiva"
-                aria-label="Cursiva"
-                disabled={showPreview}
-              >
-                <Italic />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertMarkdown('[', '](https://)', 'texto del enlace')}
-                title="Enlace"
-                aria-label="Enlace"
-                disabled={showPreview}
-              >
-                <LinkIcon />
-              </button>
-              <span className="toolbar-sep" aria-hidden="true" />
-              <button
-                type="button"
-                onClick={() => insertMarkdown('> ', '\n', 'Cita', true)}
-                title="Cita"
-                aria-label="Cita"
-                disabled={showPreview}
-              >
-                <Quote />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertMarkdown('- ', '\n', 'Elemento', true)}
-                title="Lista"
-                aria-label="Lista"
-                disabled={showPreview}
-              >
-                <List />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertMarkdown('1. ', '\n', 'Elemento', true)}
-                title="Lista numerada"
-                aria-label="Lista numerada"
-                disabled={showPreview}
-              >
-                <ListOrdered />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertMarkdown('---\n', '', '', true)}
-                title="Separador"
-                aria-label="Separador"
-                disabled={showPreview}
-              >
-                <Minus />
-              </button>
-              <button
-                type="button"
-                className={`toolbar-preview${showPreview ? ' active' : ''}`}
-                onClick={() => setShowPreview((value) => !value)}
-                aria-pressed={showPreview}
-              >
-                <Eye /> {showPreview ? 'Editar' : 'Vista previa'}
-              </button>
-            </div>
-            {showPreview ? (
-              <div className="editor-live-preview">
-                {draft.content ? (
-                  <MarkdownContent content={draft.content} />
-                ) : (
-                  <p>Comienza a escribir para ver la vista previa.</p>
-                )}
-              </div>
-            ) : (
-              <textarea
-                ref={contentRef}
-                className="markdown-editor"
-                rows={22}
-                value={draft.content}
-                onChange={(e) => update('content', e.target.value)}
-                aria-label="Contenido"
-                required
-                placeholder={
-                  'Escribe aquí el artículo.\n\nDeja una línea en blanco entre párrafos. Usa la barra de herramientas para subtítulos, citas y listas.'
-                }
-              />
-            )}
+            <RichTextEditor
+              value={draft.content}
+              onChange={(markdown) => update('content', markdown)}
+              onReady={onEditorReady}
+            />
           </div>
           <details className="editor-seo">
             <summary>
@@ -582,11 +452,26 @@ export function ArticleEditorPage() {
             </label>
             <label>
               Autor
-              <input
-                value={draft.authorName}
-                onChange={(e) => update('authorName', e.target.value)}
-                required
-              />
+              <select
+                value={draft.authorProfileId || ''}
+                onChange={(e) => {
+                  const selected = authors.find((a) => a.id === e.target.value)
+                  update('authorProfileId', selected?.id || '')
+                  update('authorName', selected?.name || 'Redacción SumateRD')
+                }}
+              >
+                <option value="">Redacción SumateRD</option>
+                {authors.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+              <small>
+                <Link to="/admin/authors/new" target="_blank">
+                  + Crear autor
+                </Link>
+              </small>
             </label>
           </section>
           <section>
@@ -606,8 +491,10 @@ export function ArticleEditorPage() {
               ownerId={ownerId}
               kind="content"
               onChange={(url) => {
-                setShowPreview(false)
-                insertMarkdown(`![${contentImageAlt || 'Imagen del artículo'}](`, ')\n', url, true)
+                const alt = contentImageAlt || 'Imagen del artículo'
+                if (editorRef.current)
+                  editorRef.current.chain().focus().setImage({ src: url, alt }).run()
+                else update('content', `${draft.content}\n\n![${alt}](${url})\n`)
                 setContentImageAlt('')
               }}
             />

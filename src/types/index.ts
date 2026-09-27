@@ -13,6 +13,8 @@ export interface Article {
   coverImageAlt: string
   authorId: string
   authorName: string
+  /** Perfil de la colección authors; vacío = Redacción SumateRD */
+  authorProfileId?: string
   category: CategorySlug
   tags: string[]
   keywords: string[]
@@ -133,4 +135,25 @@ export interface ChangeInterestInput {
   adultConfirmed: boolean
   sensitiveDataConsent: boolean
   website?: string
+}
+
+export interface AuthorSocials {
+  instagram?: string
+  facebook?: string
+  x?: string
+  linkedin?: string
+  website?: string
+}
+
+export interface Author {
+  id: string
+  name: string
+  slug: string
+  role: string
+  bio: string
+  photoUrl: string
+  socials: AuthorSocials
+  publishedCount?: number
+  createdAt?: Timestamp | Date | string | null
+  updatedAt?: Timestamp | Date | string | null
 }

@@ -10,6 +10,10 @@ service firebase.storage {
       allow read: if true;
       allow write: if admin() && validImage();
     }
+    match /authors/{authorId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if admin() && validImage();
+    }
     match /carousel/{panelId}/{allPaths=**} {
       allow read: if true;
       allow write: if admin() && validImage();

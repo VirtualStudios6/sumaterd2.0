@@ -9,16 +9,19 @@ import {
   ReadingProgress,
   ShareButtons,
 } from '../components/ArticleParts'
+import { AuthorBox } from '../components/AuthorParts'
 import { EmptyState, ErrorState, Spinner } from '../components/Ui'
 import { isPublicCategory, SITE_URL } from '../lib/constants'
 import { getArticleBySlug, getRelated } from '../services/articles'
-import type { Article } from '../types'
+import { getAuthorById } from '../services/authors'
+import type { Article, Author } from '../types'
 import { toDate } from '../utils/date'
 
 export function ArticlePage() {
   const { slug = '' } = useParams()
   const [article, setArticle] = useState<Article | null>(null)
   const [related, setRelated] = useState<Article[]>([])
+  const [author, setAuthor] = useState<Author | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   useEffect(() => {
@@ -28,7 +31,12 @@ export function ArticlePage() {
       .then(async (a) => {
         const selected = a && isPublicCategory(a.category) ? a : null
         setArticle(selected)
+        setAuthor(null)
         if (!selected) return
+        if (selected.authorProfileId)
+          getAuthorById(selected.authorProfileId)
+            .then(setAuthor)
+            .catch(() => setAuthor(null))
         try {
           setRelated(await getRelated(selected))
         } catch {
@@ -73,7 +81,11 @@ export function ArticlePage() {
     ...(image ? { image: [image] } : {}),
     datePublished: toDate(article.publishedAt)?.toISOString(),
     dateModified: toDate(article.updatedAt)?.toISOString(),
-    author: { '@type': 'Person', name: article.authorName },
+    author: {
+      '@type': 'Person',
+      name: article.authorName,
+      ...(author ? { url: SITE_URL + '/autor/' + author.slug } : {}),
+    },
     publisher: { '@type': 'Organization', name: 'SumateRD' },
   }
   return (
@@ -120,6 +132,7 @@ export function ArticlePage() {
           </div>
         )}
         <ShareButtons title={article.title} url={url} />
+        {author && <AuthorBox author={author} />}
       </div>
       {related.length > 0 && (
         <section className="container related">

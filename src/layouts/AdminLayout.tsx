@@ -6,6 +6,7 @@ import {
   LogOut,
   Menu,
   MessageSquareText,
+  PenSquare,
   Settings,
   UserRoundCog,
   Vote,
@@ -44,6 +45,9 @@ export function AdminLayout() {
       </NavLink>
       <NavLink to="/admin/articles">
         <FileText /> Artículos
+      </NavLink>
+      <NavLink to="/admin/authors">
+        <PenSquare /> Autores
       </NavLink>
       <NavLink to="/admin/carousel">
         <Images /> Portada

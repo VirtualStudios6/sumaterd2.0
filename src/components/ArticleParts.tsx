@@ -24,7 +24,7 @@ export function ArticleMeta({ article, compact = false }: { article: Article; co
       {!compact && <span className="meta-author">{article.authorName}</span>}
       <span>{formatDate(article.publishedAt || article.updatedAt)}</span>
       <span>
-        <Clock aria-hidden="true" /> {article.readingTime} min
+        <Clock aria-hidden="true" /> {article.readingTime} min de lectura
       </span>
     </div>
   )
