@@ -71,6 +71,7 @@ export const registerChangeInterest = onCall(
   async (request) => {
     await enforcePublicRateLimit('change-interest', request, 20, 60 * 60 * 1000)
     const fullName = cleanText(request.data?.fullName, 100)
+    const cedula = normalizeCedula(request.data?.cedula)
     const email = cleanText(request.data?.email, 254).toLowerCase()
     const phone = String(request.data?.phone || '').replace(/\D/g, '')
     const province = cleanText(request.data?.province, 80)
@@ -83,6 +84,7 @@ export const registerChangeInterest = onCall(
     if (honeypot) return { received: true, reference: 'RECIBIDO' }
     if (
       fullName.length < 3 ||
+      !validCedula(cedula) ||
       !/^\S+@\S+\.\S+$/.test(email) ||
       !province ||
       !changeParticipationOptions.has(participation) ||
@@ -104,6 +106,7 @@ export const registerChangeInterest = onCall(
       const reference = `CAM-${randomUUID().slice(0, 8).toUpperCase()}`
       tx.create(ref, {
         fullName,
+        cedula,
         email,
         phone,
         province,
@@ -561,10 +564,17 @@ export const adminUsers = onCall({ cors: true }, async (request) => {
     const snap = await db.collection('users').orderBy('createdAt', 'desc').limit(250).get()
     const users = await Promise.all(
       snap.docs.map(async (item) => {
-        const record = await adminAuth.getUser(item.id).catch(() => null)
+        const [record, privateData] = await Promise.all([
+          adminAuth.getUser(item.id).catch(() => null),
+          db
+            .doc(`userPrivate/${item.id}`)
+            .get()
+            .catch(() => null),
+        ])
         return {
           id: item.id,
           ...serialize(item.data()),
+          cedula: cleanText(privateData?.get('cedula'), 11),
           disabled: record?.disabled === true,
         }
       }),

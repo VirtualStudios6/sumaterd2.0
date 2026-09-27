@@ -87,6 +87,7 @@ describe('Registro de interÃ©s de Proyecto Cambio', () => {
     const email = `cambio-${Date.now()}@example.test`
     const interest = {
       fullName: 'Ciudadana de Prueba',
+      cedula: '00113918295',
       email,
       phone: '8095550101',
       province: 'Santo Domingo',
@@ -113,6 +114,7 @@ describe('Registro de interÃ©s de Proyecto Cambio', () => {
     await expect(
       callable('registerChangeInterest', {
         fullName: 'Ciudadano de Prueba',
+        cedula: '00113918295',
         email: 'sin-consentimiento@example.test',
         province: 'Santiago',
         participation: 'volunteer',
@@ -170,6 +172,7 @@ describe('Functions del CMS en Emulator Suite', () => {
     const interestEmail = `gestion-cambio-${Date.now()}@example.test`
     await callable('registerChangeInterest', {
       fullName: 'Solicitud para Gestión',
+      cedula: '00113918295',
       email: interestEmail,
       province: 'Santiago',
       participation: 'information',

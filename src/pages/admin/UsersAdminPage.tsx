@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ConfirmDialog, ErrorState, Notice, Spinner } from '../../components/Ui'
 import { adminUsers } from '../../services/admin'
 import type { AdminUserRecord } from '../../types'
+import { formatCedula } from '../../utils/cedula'
 import { formatDate } from '../../utils/date'
 
 export function UsersAdminPage() {
@@ -30,7 +31,9 @@ export function UsersAdminPage() {
   }, [])
   const visible = useMemo(() => {
     const value = term.toLowerCase()
-    return users.filter((user) => `${user.fullName} ${user.email}`.toLowerCase().includes(value))
+    return users.filter((user) =>
+      `${user.fullName} ${user.email} ${user.cedula || ''}`.toLowerCase().includes(value),
+    )
   }, [term, users])
 
   const toggleStatus = async (user: AdminUserRecord) => {
@@ -80,7 +83,7 @@ export function UsersAdminPage() {
             <thead>
               <tr>
                 <th>Usuario</th>
-                <th>Cédula protegida</th>
+                <th>Cédula</th>
                 <th>Registro</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -95,7 +98,9 @@ export function UsersAdminPage() {
                       <strong>{user.fullName}</strong>
                       <small>{user.email}</small>
                     </td>
-                    <td>{user.cedulaMasked}</td>
+                    <td className="cedula-cell">
+                      {user.cedula ? formatCedula(user.cedula) : user.cedulaMasked || 'Sin cédula'}
+                    </td>
                     <td>{formatDate(user.createdAt)}</td>
                     <td>
                       <span className={`status-pill ${disabled ? 'draft' : 'published'}`}>

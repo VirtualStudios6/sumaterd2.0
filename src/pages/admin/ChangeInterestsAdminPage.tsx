@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ConfirmDialog, ErrorState, Notice, Spinner } from '../../components/Ui'
 import { adminChangeInterests } from '../../services/admin'
 import type { ChangeInterestRecord, ChangeInterestStatus } from '../../types'
+import { formatCedula } from '../../utils/cedula'
 import { formatDate } from '../../utils/date'
 
 const STATUS_LABELS: Record<ChangeInterestStatus, string> = {
@@ -39,7 +40,7 @@ export function ChangeInterestsAdminPage() {
     return items.filter(
       (item) =>
         (status === 'all' || item.status === status) &&
-        `${item.fullName} ${item.email} ${item.province} ${item.reference}`
+        `${item.fullName} ${item.cedula || ''} ${item.email} ${item.province} ${item.reference}`
           .toLowerCase()
           .includes(value),
     )
@@ -61,6 +62,7 @@ export function ChangeInterestsAdminPage() {
       [
         'Referencia',
         'Nombre',
+        'Cédula',
         'Correo',
         'Teléfono',
         'Provincia',
@@ -72,6 +74,7 @@ export function ChangeInterestsAdminPage() {
       ...visible.map((item) => [
         item.reference,
         item.fullName,
+        item.cedula ? formatCedula(item.cedula) : '',
         item.email,
         item.phone,
         item.province,
@@ -151,6 +154,9 @@ export function ChangeInterestsAdminPage() {
                 <tr key={item.id}>
                   <td>
                     <strong>{item.fullName}</strong>
+                    <span className="cedula-cell">
+                      {item.cedula ? formatCedula(item.cedula) : 'Sin cédula'}
+                    </span>
                     <small>
                       {item.email} · {item.phone || 'Sin teléfono'}
                       <br />

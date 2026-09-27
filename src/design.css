@@ -960,3 +960,14 @@ body {
 .article-header .meta span:last-child::before {
   display: none;
 }
+
+/* Anchor targets below the sticky header */
+#quiero-participar,
+#propuesta {
+  scroll-margin-top: 88px;
+}
+.field-error {
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 600;
+}

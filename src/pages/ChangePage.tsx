@@ -6,12 +6,21 @@ import {
   ShieldCheck,
   UsersRound,
 } from 'lucide-react'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, type MouseEvent, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { ErrorState } from '../components/Ui'
 import { registerChangeInterest } from '../services/change'
 import type { ChangeInterestInput } from '../types'
+import { formatCedula, isValidCedula, normalizeCedula } from '../utils/cedula'
+
+// Desplaza a una sección sin pasar por el router (evita tener que pulsar dos veces).
+function scrollToSection(event: MouseEvent<HTMLAnchorElement>, id: string) {
+  const target = document.getElementById(id)
+  if (!target) return
+  event.preventDefault()
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const provinces = [
   'Azua',
@@ -50,6 +59,7 @@ const provinces = [
 
 const initialForm: ChangeInterestInput = {
   fullName: '',
+  cedula: '',
   email: '',
   phone: '',
   province: '',
@@ -71,10 +81,14 @@ export function ChangePage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
+    if (!isValidCedula(form.cedula)) {
+      setError('Revisa la cédula: debe tener 11 dígitos y ser válida.')
+      return
+    }
     setLoading(true)
     setError('')
     try {
-      const result = await registerChangeInterest(form)
+      const result = await registerChangeInterest({ ...form, cedula: normalizeCedula(form.cedula) })
       setReference(result.reference)
       setForm(initialForm)
     } catch {
@@ -106,10 +120,18 @@ export function ChangePage() {
             la gente.
           </p>
           <div className="change-actions">
-            <a className="button change-primary" href="#quiero-participar">
+            <a
+              className="button change-primary"
+              href="#quiero-participar"
+              onClick={(event) => scrollToSection(event, 'quiero-participar')}
+            >
               Quiero ser parte <ArrowRight aria-hidden="true" />
             </a>
-            <a className="change-text-link" href="#propuesta">
+            <a
+              className="change-text-link"
+              href="#propuesta"
+              onClick={(event) => scrollToSection(event, 'propuesta')}
+            >
               Conocer la propuesta
             </a>
           </div>
@@ -198,6 +220,22 @@ export function ChangePage() {
                     value={form.fullName}
                     onChange={(event) => update('fullName', event.target.value)}
                   />
+                </label>
+                <label>
+                  Cédula de identidad
+                  <input
+                    required
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="000-0000000-0"
+                    maxLength={13}
+                    value={formatCedula(form.cedula)}
+                    onChange={(event) => update('cedula', normalizeCedula(event.target.value))}
+                    aria-invalid={form.cedula.length === 11 && !isValidCedula(form.cedula)}
+                  />
+                  {form.cedula.length === 11 && !isValidCedula(form.cedula) && (
+                    <small className="field-error">Esta cédula no es válida.</small>
+                  )}
                 </label>
                 <div className="change-form-pair">
                   <label>

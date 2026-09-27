@@ -100,6 +100,8 @@ export interface SiteSettings {
 
 export interface AdminUserRecord extends UserProfile {
   disabled?: boolean
+  /** Cédula completa, solo disponible para administradores */
+  cedula?: string
 }
 
 export type ChangeInterestStatus = 'new' | 'contacted' | 'accepted' | 'closed'
@@ -107,6 +109,7 @@ export type ChangeInterestStatus = 'new' | 'contacted' | 'accepted' | 'closed'
 export interface ChangeInterestRecord {
   id: string
   fullName: string
+  cedula?: string
   email: string
   phone: string
   province: string
@@ -127,6 +130,7 @@ export type ChangeParticipation = 'ideas' | 'volunteer' | 'organizer' | 'informa
 
 export interface ChangeInterestInput {
   fullName: string
+  cedula: string
   email: string
   phone: string
   province: string

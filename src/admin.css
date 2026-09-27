@@ -1081,3 +1081,11 @@ kbd {
     height: 44px;
   }
 }
+
+.cedula-cell {
+  display: block;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
