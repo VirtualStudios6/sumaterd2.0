@@ -17,7 +17,7 @@ Haz deploy (push a `main`) y comprueba que `https://sumaterd.do/manifest.webmani
 Opción rápida: **https://www.pwabuilder.com**
 
 1. Pega `https://sumaterd.do` → *Package for stores* → **Android** → *Google Play*.
-2. Package ID: `do.sumaterd.app` (debe coincidir con `assetlinks.json`).
+2. Package ID: `com.sumaterd.app` (debe coincidir con `assetlinks.json`).
 3. App name `SumateRD`, launcher name `SumateRD`, status bar color `#FFFFFF`, splash `#FFFFFF`.
 4. Signing key: *Create new*. **Guarda el `.keystore` y sus contraseñas en un lugar seguro**: sin ellos no podrás publicar actualizaciones.
 5. Descarga el ZIP: contiene `app-release-bundle.aab` y `assetlinks.json`.

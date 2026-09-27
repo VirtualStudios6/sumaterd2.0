@@ -1,10 +1,14 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
-      "package_name": "do.sumaterd.app",
-      "sha256_cert_fingerprints": ["REEMPLAZAR_CON_SHA256_DE_PLAY_CONSOLE"]
+      "package_name": "com.sumaterd.app",
+      "sha256_cert_fingerprints": [
+        "89:C7:1C:AD:83:20:2A:BA:29:84:C9:DB:6E:24:E5:A4:AE:33:77:61:AE:4B:FF:93:D7:B9:3E:17:7C:08:B1:83"
+      ]
     }
   }
 ]

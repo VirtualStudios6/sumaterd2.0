@@ -6,3 +6,4 @@ package-lock.json
 functions/package-lock.json
 *.log
 *.tsbuildinfo
+android/

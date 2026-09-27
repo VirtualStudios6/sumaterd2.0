@@ -16,3 +16,13 @@ coverage/
 *service-account*.json
 .DS_Store
 Thumbs.db
+
+# Android (TWA)
+android/.gradle/
+android/**/build/
+android/local.properties
+*.keystore
+*.jks
+android/*.apk
+android/*.aab
+android/*.idsig

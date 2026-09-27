@@ -21,7 +21,8 @@
     "seed": "npm --prefix functions run seed",
     "admin:grant": "npm --prefix functions run grant-admin --",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "android:build": "node scripts/build-android.mjs"
   },
   "dependencies": {
     "@fontsource-variable/nunito-sans": "^5.3.0",
@@ -44,6 +45,7 @@
     "tiptap-markdown": "^0.8.10"
   },
   "devDependencies": {
+    "@bubblewrap/core": "^1.25.0",
     "@eslint/js": "^9.36.0",
     "@firebase/rules-unit-testing": "^5.0.0",
     "@testing-library/jest-dom": "^6.8.0",
