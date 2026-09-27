@@ -971,3 +971,32 @@ body {
   font-size: 12px;
   font-weight: 600;
 }
+
+/* Native-app feel on phones: no web footer, no rubber-band, no stray selection */
+@media (max-width: 760px) {
+  .footer {
+    display: none;
+  }
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+  #contenido {
+    min-height: calc(100dvh - 60px - var(--tabbar-h));
+  }
+  a,
+  button {
+    touch-action: manipulation;
+  }
+  .tab-bar,
+  .site-header,
+  .mobile-drawer nav,
+  .social-strip {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .tab-bar a:active,
+  .icon-button:active {
+    opacity: 0.6;
+  }
+}
