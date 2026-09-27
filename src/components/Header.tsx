@@ -43,6 +43,9 @@ const SOCIAL_LINKS = [
   { label: 'YouTube', href: '', className: 'youtube', icon: <Youtube aria-hidden="true" /> },
 ]
 
+// Ya están en la barra inferior de la app; no se repiten en el menú lateral.
+const DRAWER_HIDDEN = ['opinion', 'cambio']
+
 export function Header() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -156,12 +159,11 @@ export function Header() {
               <NavLink to="/" end>
                 Inicio
               </NavLink>
-              {CATEGORIES.map((c) => (
+              {CATEGORIES.filter((c) => !DRAWER_HIDDEN.includes(c.slug)).map((c) => (
                 <NavLink key={c.slug} to={`/categoria/${c.slug}`}>
                   {c.name}
                 </NavLink>
               ))}
-              <NavLink to="/buscar">Buscar</NavLink>
             </nav>
             <div className="drawer-account">
               {user ? (
