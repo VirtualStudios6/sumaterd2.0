@@ -147,13 +147,6 @@ export function HomePage() {
           <>
             {loadError && <ErrorState message={loadError} />}
             <HeroCarousel panels={panels} />
-            <section className="home-editorial-intro" aria-label="Propósito de SumateRD">
-              <div>
-                <p className="eyebrow">{settings.homeEyebrow}</p>
-                <h2>{settings.homeTitle}</h2>
-              </div>
-              <p>{settings.homeDescription}</p>
-            </section>
             {main ? (
               <section className="featured-block" aria-labelledby="destacado">
                 <div className="home-section-label">
