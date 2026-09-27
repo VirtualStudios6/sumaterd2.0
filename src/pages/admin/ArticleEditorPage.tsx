@@ -1,8 +1,23 @@
-import { Bold, Eye, Heading2, Italic, Link as LinkIcon, List, Quote } from 'lucide-react'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import {
+  ArrowLeft,
+  Bold,
+  Check,
+  Circle,
+  ExternalLink,
+  Eye,
+  Heading2,
+  Heading3,
+  Italic,
+  Link as LinkIcon,
+  List,
+  ListOrdered,
+  Minus,
+  Quote,
+} from 'lucide-react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { MarkdownContent } from '../../components/ArticleParts'
-import { ErrorState, Notice, Spinner } from '../../components/Ui'
+import { ErrorState, Spinner } from '../../components/Ui'
 import { ImageUploader } from '../../components/ImageUploader'
 import { CATEGORIES } from '../../lib/constants'
 import { getArticleById, saveAdminArticle } from '../../services/articles'
@@ -38,6 +53,11 @@ const blank: Draft = {
   seoDescription: '',
 }
 
+function wordCount(markdown: string) {
+  const text = markdown.replace(/[`#>*_[\]()!-]/g, ' ').trim()
+  return text ? text.split(/\s+/).length : 0
+}
+
 export function ArticleEditorPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -49,6 +69,7 @@ export function ArticleEditorPage() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState('')
   const [showPreview, setShowPreview] = useState(false)
+  const [dirty, setDirty] = useState(false)
   const initialized = useRef(false)
   const ownerId = id || draft.id || temporaryOwnerId
   useEffect(() => {
@@ -82,17 +103,30 @@ export function ArticleEditorPage() {
         readingTime: readingTime(draft.content),
       }
       saveAdminArticle(payload)
-        .then(() => setSaveState('saved'))
+        .then(() => {
+          setSaveState('saved')
+          setDirty(false)
+        })
         .catch(() => setSaveState('error'))
     }, 1200)
     return () => clearTimeout(timer)
   }, [draft, id])
-  const update = <K extends keyof Draft>(key: K, value: Draft[K]) =>
+  useEffect(() => {
+    if (!dirty) return
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [dirty])
+  const update = <K extends keyof Draft>(key: K, value: Draft[K]) => {
+    setDirty(true)
     setDraft((d) => ({
       ...d,
       [key]: value,
-      ...(key === 'title' && !id && !d.slug ? { slug: slugify(String(value)) } : {}),
+      ...(key === 'title' && !id && (!d.slug || d.slug === slugify(d.title))
+        ? { slug: slugify(String(value)) }
+        : {}),
     }))
+  }
   const persist = async (status = draft.status, redirect = true) => {
     if (!draft.title.trim() || !draft.slug.trim()) {
       setError('Título y slug son obligatorios.')
@@ -100,6 +134,10 @@ export function ArticleEditorPage() {
     }
     if (status === 'published' && (!draft.summary.trim() || !draft.content.trim())) {
       setError('Para publicar completa el resumen y el contenido.')
+      return
+    }
+    if (status === 'published' && draft.coverImage && !draft.coverImageAlt.trim()) {
+      setError('Describe la imagen de portada (texto alternativo) antes de publicar.')
       return
     }
     setSaveState('saving')
@@ -116,6 +154,7 @@ export function ArticleEditorPage() {
       }
       const result = await saveAdminArticle(payload)
       setSaveState('saved')
+      setDirty(false)
       setDraft((d) => ({ ...d, id: result.id, slug: result.slug, status }))
       if (!id && redirect) navigate(`/admin/articles/${result.id}/edit`, { replace: true })
     } catch {
@@ -127,65 +166,110 @@ export function ArticleEditorPage() {
     e.preventDefault()
     void persist(draft.status)
   }
-  const insertMarkdown = (before: string, after = '', placeholder = 'texto') => {
+  const persistRef = useRef(persist)
+  persistRef.current = persist
+  const onShortcut = useCallback((event: KeyboardEvent) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault()
+      void persistRef.current(undefined, true)
+    }
+  }, [])
+  useEffect(() => {
+    window.addEventListener('keydown', onShortcut)
+    return () => window.removeEventListener('keydown', onShortcut)
+  }, [onShortcut])
+  const insertMarkdown = (before: string, after = '', placeholder = 'texto', block = false) => {
     const element = contentRef.current
-    if (!element) return
-    const start = element.selectionStart
-    const end = element.selectionEnd
+    const start = element?.selectionStart ?? draft.content.length
+    const end = element?.selectionEnd ?? draft.content.length
     const selected = draft.content.slice(start, end) || placeholder
-    const next = `${draft.content.slice(0, start)}${before}${selected}${after}${draft.content.slice(end)}`
+    const needsBreak = block && start > 0 && draft.content[start - 1] !== '\n'
+    const prefix = `${needsBreak ? '\n\n' : ''}${before}`
+    const next = `${draft.content.slice(0, start)}${prefix}${selected}${after}${draft.content.slice(end)}`
     update('content', next)
+    if (!element) return
     requestAnimationFrame(() => {
       element.focus()
-      element.setSelectionRange(start + before.length, start + before.length + selected.length)
+      element.setSelectionRange(start + prefix.length, start + prefix.length + selected.length)
     })
   }
+  const checklist = [
+    { label: 'Título', done: Boolean(draft.title.trim()) },
+    { label: 'Resumen', done: Boolean(draft.summary.trim()) },
+    { label: 'Contenido', done: Boolean(draft.content.trim()) },
+    { label: 'Extensión de 150+ palabras', done: wordCount(draft.content) >= 150, optional: true },
+    { label: 'Imagen de portada', done: Boolean(draft.coverImage), optional: true },
+    {
+      label: 'Texto alternativo de portada',
+      done: !draft.coverImage || Boolean(draft.coverImageAlt.trim()),
+    },
+  ]
   const publishReady = Boolean(
     draft.title.trim() &&
     draft.slug.trim() &&
     draft.summary.trim() &&
     draft.content.trim() &&
-    draft.category,
+    draft.category &&
+    (!draft.coverImage || draft.coverImageAlt.trim()),
   )
+  const seoTitle = draft.seoTitle || draft.title || 'Título del artículo'
+  const seoDescription =
+    draft.seoDescription || draft.summary || 'El resumen del artículo aparecerá aquí.'
+  const words = wordCount(draft.content)
+  const saveLabel =
+    saveState === 'saving'
+      ? 'Guardando…'
+      : saveState === 'error'
+        ? 'Error al guardar'
+        : dirty
+          ? draft.status === 'published'
+            ? 'Cambios sin publicar'
+            : 'Cambios pendientes'
+          : saveState === 'saved'
+            ? 'Guardado'
+            : 'Sin cambios'
   if (loading) return <Spinner label="Cargando editor" />
   return (
     <>
-      <div className="admin-title">
+      <div className="admin-title editor-title">
         <div>
-          <p>Contenido</p>
+          <Link className="admin-back" to="/admin/articles">
+            <ArrowLeft aria-hidden="true" /> Artículos
+          </Link>
           <h1>{id ? 'Editar artículo' : 'Nuevo artículo'}</h1>
         </div>
-        <span className={`save-state ${saveState}`}>
-          {saveState === 'saving'
-            ? 'Guardando…'
-            : saveState === 'saved'
-              ? 'Guardado'
-              : saveState === 'error'
-                ? 'Error al guardar'
-                : 'Sin cambios'}
-        </span>
+        <div className="editor-title-actions">
+          <span
+            className={`save-state ${dirty && saveState !== 'saving' ? 'dirty' : saveState}`}
+            role="status"
+          >
+            <i aria-hidden="true" />
+            {saveLabel}
+          </span>
+          {draft.status === 'published' && draft.slug && (
+            <a
+              className="button secondary small"
+              href={`/articulo/${draft.slug}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <ExternalLink aria-hidden="true" /> Ver en el sitio
+            </a>
+          )}
+        </div>
       </div>
       {error && <ErrorState message={error} />}
       <form className="editor" onSubmit={submit}>
         <div className="editor-main">
-          <label>
-            Título
+          <label className="editor-title-field">
+            <span className="sr-only">Título</span>
             <input
               className="title-input"
               value={draft.title}
               onChange={(e) => update('title', e.target.value)}
+              placeholder="Título del artículo"
               required
             />
-          </label>
-          <label>
-            Slug
-            <div className="slug-field">
-              <span>/articulo/</span>
-              <input value={draft.slug} onChange={(e) => update('slug', e.target.value)} required />
-            </div>
-            <small>
-              Después de publicar no cambia automáticamente. Puedes editarlo manualmente.
-            </small>
           </label>
           <label>
             Resumen
@@ -194,49 +278,112 @@ export function ArticleEditorPage() {
               maxLength={320}
               value={draft.summary}
               onChange={(e) => update('summary', e.target.value)}
+              placeholder="Una o dos frases que expliquen de qué trata. Aparece bajo el título y en las tarjetas."
               required
             />
-            <small>{draft.summary.length}/320 caracteres</small>
+            <small className="field-meta">
+              <span>Se muestra en portada, tarjetas y al compartir.</span>
+              <span>{draft.summary.length}/320</span>
+            </small>
           </label>
-          <label>
-            Contenido
+          <div className="editor-content-field">
+            <div className="editor-content-head">
+              <span>Contenido</span>
+              <small>
+                {words} palabras · {readingTime(draft.content)} min de lectura
+              </small>
+            </div>
             <div className="markdown-toolbar" role="toolbar" aria-label="Formato del artículo">
               <button
                 type="button"
-                onClick={() => insertMarkdown('## ', '', 'Subtítulo')}
+                onClick={() => insertMarkdown('## ', '\n', 'Subtítulo', true)}
                 title="Subtítulo"
+                aria-label="Subtítulo"
+                disabled={showPreview}
               >
                 <Heading2 />
               </button>
-              <button type="button" onClick={() => insertMarkdown('**', '**')} title="Negrita">
+              <button
+                type="button"
+                onClick={() => insertMarkdown('### ', '\n', 'Apartado', true)}
+                title="Apartado"
+                aria-label="Apartado"
+                disabled={showPreview}
+              >
+                <Heading3 />
+              </button>
+              <span className="toolbar-sep" aria-hidden="true" />
+              <button
+                type="button"
+                onClick={() => insertMarkdown('**', '**')}
+                title="Negrita"
+                aria-label="Negrita"
+                disabled={showPreview}
+              >
                 <Bold />
-              </button>
-              <button type="button" onClick={() => insertMarkdown('_', '_')} title="Cursiva">
-                <Italic />
-              </button>
-              <button type="button" onClick={() => insertMarkdown('> ', '', 'Cita')} title="Cita">
-                <Quote />
               </button>
               <button
                 type="button"
-                onClick={() => insertMarkdown('- ', '', 'Elemento')}
-                title="Lista"
+                onClick={() => insertMarkdown('_', '_')}
+                title="Cursiva"
+                aria-label="Cursiva"
+                disabled={showPreview}
               >
-                <List />
+                <Italic />
               </button>
               <button
                 type="button"
                 onClick={() => insertMarkdown('[', '](https://)', 'texto del enlace')}
                 title="Enlace"
+                aria-label="Enlace"
+                disabled={showPreview}
               >
                 <LinkIcon />
               </button>
+              <span className="toolbar-sep" aria-hidden="true" />
               <button
                 type="button"
-                onClick={() => setShowPreview((value) => !value)}
-                title="Vista previa"
+                onClick={() => insertMarkdown('> ', '\n', 'Cita', true)}
+                title="Cita"
+                aria-label="Cita"
+                disabled={showPreview}
               >
-                <Eye /> {showPreview ? 'Editar' : 'Previsualizar'}
+                <Quote />
+              </button>
+              <button
+                type="button"
+                onClick={() => insertMarkdown('- ', '\n', 'Elemento', true)}
+                title="Lista"
+                aria-label="Lista"
+                disabled={showPreview}
+              >
+                <List />
+              </button>
+              <button
+                type="button"
+                onClick={() => insertMarkdown('1. ', '\n', 'Elemento', true)}
+                title="Lista numerada"
+                aria-label="Lista numerada"
+                disabled={showPreview}
+              >
+                <ListOrdered />
+              </button>
+              <button
+                type="button"
+                onClick={() => insertMarkdown('---\n', '', '', true)}
+                title="Separador"
+                aria-label="Separador"
+                disabled={showPreview}
+              >
+                <Minus />
+              </button>
+              <button
+                type="button"
+                className={`toolbar-preview${showPreview ? ' active' : ''}`}
+                onClick={() => setShowPreview((value) => !value)}
+                aria-pressed={showPreview}
+              >
+                <Eye /> {showPreview ? 'Editar' : 'Vista previa'}
               </button>
             </div>
             {showPreview ? (
@@ -254,67 +401,160 @@ export function ArticleEditorPage() {
                 rows={22}
                 value={draft.content}
                 onChange={(e) => update('content', e.target.value)}
+                aria-label="Contenido"
                 required
-                placeholder="# Escribe el artículo&#10;&#10;Comienza aquí…"
+                placeholder={
+                  'Escribe aquí el artículo.\n\nDeja una línea en blanco entre párrafos. Usa la barra de herramientas para subtítulos, citas y listas.'
+                }
               />
             )}
-          </label>
-          <div className="editor-pair">
+          </div>
+          <details className="editor-seo">
+            <summary>
+              <span>SEO y redes sociales</span>
+              <small>Cómo se verá en Google y al compartir</small>
+            </summary>
+            <div className="seo-preview" aria-hidden="true">
+              <span className="seo-url">sumaterd.do › articulo › {draft.slug || 'slug'}</span>
+              <strong>{seoTitle}</strong>
+              <p>{seoDescription}</p>
+            </div>
             <label>
-              SEO title
+              Slug (URL)
+              <div className="slug-field">
+                <span>/articulo/</span>
+                <input
+                  value={draft.slug}
+                  onChange={(e) => update('slug', e.target.value)}
+                  required
+                />
+              </div>
+              <small>No cambies el slug de un artículo ya compartido: rompería los enlaces.</small>
+            </label>
+            <label>
+              Título SEO
               <input
                 maxLength={70}
                 value={draft.seoTitle || ''}
                 onChange={(e) => update('seoTitle', e.target.value)}
+                placeholder={draft.title}
               />
+              <small className="field-meta">
+                <span>Opcional. Si lo dejas vacío se usa el título.</span>
+                <span>{(draft.seoTitle || '').length}/70</span>
+              </small>
             </label>
             <label>
-              SEO description
+              Descripción SEO
               <textarea
                 rows={3}
                 maxLength={160}
                 value={draft.seoDescription || ''}
                 onChange={(e) => update('seoDescription', e.target.value)}
+                placeholder={draft.summary}
               />
+              <small className="field-meta">
+                <span>Opcional. Si la dejas vacía se usa el resumen.</span>
+                <span>{(draft.seoDescription || '').length}/160</span>
+              </small>
             </label>
-          </div>
+          </details>
         </div>
         <aside className="editor-side">
-          <section>
-            <h2>Publicación</h2>
-            <div className={`publication-state ${draft.status}`}>
-              <span>Estado actual</span>
-              <strong>{draft.status === 'published' ? 'Publicado' : 'Borrador'}</strong>
+          <section className="publish-panel">
+            <div className="publish-panel-head">
+              <h2>Publicación</h2>
+              <span className={`status-pill ${draft.status}`}>
+                {draft.status === 'published' ? 'Publicado' : 'Borrador'}
+              </span>
             </div>
-            <label className="check">
+            <ul className="publish-checklist">
+              {checklist.map((item) => (
+                <li key={item.label} className={item.done ? 'done' : ''}>
+                  {item.done ? <Check aria-hidden="true" /> : <Circle aria-hidden="true" />}
+                  <span>{item.label}</span>
+                  {item.optional && !item.done && <small>Recomendado</small>}
+                </li>
+              ))}
+            </ul>
+            {draft.status === 'draft' ? (
+              <>
+                <button
+                  className="button publish full"
+                  type="button"
+                  onClick={() => void persist('published')}
+                  disabled={!publishReady || saveState === 'saving'}
+                >
+                  Publicar ahora
+                </button>
+                <button
+                  className="button secondary full"
+                  type="submit"
+                  disabled={saveState === 'saving'}
+                >
+                  Guardar borrador
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="button full"
+                  type="submit"
+                  disabled={!publishReady || saveState === 'saving'}
+                >
+                  Actualizar publicación
+                </button>
+                <button
+                  className="button ghost full"
+                  type="button"
+                  onClick={() => void persist('draft')}
+                  disabled={saveState === 'saving'}
+                >
+                  Retirar y pasar a borrador
+                </button>
+              </>
+            )}
+            {draft.id && (
+              <Link className="button ghost full" to={`/admin/articles/${draft.id}/preview`}>
+                <Eye aria-hidden="true" /> Vista previa completa
+              </Link>
+            )}
+            <label className="check featured-toggle">
               <input
                 type="checkbox"
                 checked={draft.featured}
                 onChange={(e) => update('featured', e.target.checked)}
-              />{' '}
-              Artículo destacado
+              />
+              <span>
+                <strong>Destacar en portada</strong>
+                <small>Aparece como historia principal.</small>
+              </span>
             </label>
-            <button className="button full" type="submit">
-              {draft.status === 'published' ? 'Actualizar publicación' : 'Guardar borrador'}
-            </button>
-            {draft.id && (
-              <Link className="button secondary full" to={`/admin/articles/${draft.id}/preview`}>
-                Vista previa
-              </Link>
+            <small className="shortcut-hint">
+              Atajo: <kbd>Ctrl</kbd> + <kbd>S</kbd> para guardar
+            </small>
+          </section>
+          <section>
+            <h2>Portada</h2>
+            <ImageUploader
+              value={draft.coverImage}
+              alt={draft.coverImageAlt}
+              area="articles"
+              ownerId={ownerId}
+              onChange={(url) => update('coverImage', url)}
+            />
+            {draft.coverImage && (
+              <label>
+                Texto alternativo
+                <input
+                  value={draft.coverImageAlt}
+                  onChange={(e) => update('coverImageAlt', e.target.value)}
+                  placeholder="Describe la imagen para lectores con discapacidad visual"
+                  required
+                />
+              </label>
             )}
-            <button
-              className={
-                draft.status === 'published' ? 'button secondary full' : 'button publish full'
-              }
-              type="button"
-              onClick={() => void persist(draft.status === 'published' ? 'draft' : 'published')}
-              disabled={draft.status === 'draft' && !publishReady}
-            >
-              {draft.status === 'published' ? 'Pasar a borrador' : 'Publicar ahora'}
-            </button>
-            {!publishReady && draft.status === 'draft' && (
-              <small>Completa el resumen y el contenido para publicar.</small>
-            )}
+            <small className="side-hint">Recomendado: horizontal, 1600 × 900 px.</small>
           </section>
           <section>
             <h2>Clasificación</h2>
@@ -338,6 +578,7 @@ export function ArticleEditorPage() {
                 onChange={(e) => update('tags', e.target.value.split(','))}
                 placeholder="comunidad, análisis"
               />
+              <small>Separadas por comas.</small>
             </label>
             <label>
               Autor
@@ -349,27 +590,9 @@ export function ArticleEditorPage() {
             </label>
           </section>
           <section>
-            <h2>Portada</h2>
-            <ImageUploader
-              value={draft.coverImage}
-              alt={draft.coverImageAlt}
-              area="articles"
-              ownerId={ownerId}
-              onChange={(url) => update('coverImage', url)}
-            />
+            <h2>Imagen en el contenido</h2>
             <label>
-              Texto alternativo
-              <input
-                value={draft.coverImageAlt}
-                onChange={(e) => update('coverImageAlt', e.target.value)}
-                required={Boolean(draft.coverImage)}
-              />
-            </label>
-          </section>
-          <section>
-            <h2>Imagen en contenido</h2>
-            <label>
-              Texto alternativo
+              Descripción / pie de foto
               <input
                 value={contentImageAlt}
                 onChange={(e) => setContentImageAlt(e.target.value)}
@@ -383,15 +606,13 @@ export function ArticleEditorPage() {
               ownerId={ownerId}
               kind="content"
               onChange={(url) => {
-                update(
-                  'content',
-                  `${draft.content}\n\n![${contentImageAlt || 'Imagen del artículo'}](${url})\n`,
-                )
+                setShowPreview(false)
+                insertMarkdown(`![${contentImageAlt || 'Imagen del artículo'}](`, ')\n', url, true)
                 setContentImageAlt('')
               }}
             />
+            <small className="side-hint">Se inserta donde esté el cursor en el texto.</small>
           </section>
-          <Notice>Tiempo estimado: {readingTime(draft.content)} min.</Notice>
         </aside>
       </form>
     </>

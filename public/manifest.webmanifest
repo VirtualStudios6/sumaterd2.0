@@ -1,11 +1,52 @@
 {
+  "id": "/",
   "name": "SumateRD",
   "short_name": "SumateRD",
-  "description": "Opinión, sociedad y participación desde República Dominicana.",
+  "description": "Opinión, sociedad y participación ciudadana desde República Dominicana.",
   "lang": "es-DO",
-  "start_url": "./",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f7f7f8",
-  "theme_color": "#002d62",
-  "icons": [{ "src": "brand/logo.png", "sizes": "645x645", "type": "image/png", "purpose": "any" }]
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "categories": ["news", "social"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    {
+      "src": "/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Foro de opinión",
+      "short_name": "Foro",
+      "url": "/categoria/opinion",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Proyecto Cambio",
+      "short_name": "Cambio",
+      "url": "/categoria/cambio",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Buscar",
+      "url": "/buscar",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
 }

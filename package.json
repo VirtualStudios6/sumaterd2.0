@@ -53,6 +53,7 @@
     "jsdom": "^27.0.0",
     "node": "20.19.5",
     "prettier": "^3.6.2",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.1.14",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.44.1",

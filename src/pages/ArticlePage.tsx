@@ -6,11 +6,11 @@ import {
   ArticleMeta,
   CategoryBadge,
   MarkdownContent,
+  ReadingProgress,
   ShareButtons,
 } from '../components/ArticleParts'
 import { EmptyState, ErrorState, Spinner } from '../components/Ui'
-import { SITE_URL } from '../lib/constants'
-import { isPublicCategory } from '../lib/constants'
+import { isPublicCategory, SITE_URL } from '../lib/constants'
 import { getArticleBySlug, getRelated } from '../services/articles'
 import type { Article } from '../types'
 import { toDate } from '../utils/date'
@@ -78,6 +78,7 @@ export function ArticlePage() {
   }
   return (
     <article className="article-page">
+      <ReadingProgress />
       <Helmet>
         <title>{article.seoTitle || article.title} — SumateRD</title>
         <meta name="description" content={article.seoDescription || article.summary} />
@@ -86,6 +87,8 @@ export function ArticlePage() {
         <meta property="og:title" content={article.seoTitle || article.title} />
         <meta property="og:description" content={article.seoDescription || article.summary} />
         {image && <meta property="og:image" content={image} />}
+        {image && <meta name="twitter:image" content={image} />}
+        <meta name="twitter:title" content={article.seoTitle || article.title} />
         <meta property="og:url" content={url} />
         <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
         <script type="application/ld+json">{JSON.stringify(schema)}</script>
@@ -98,16 +101,24 @@ export function ArticlePage() {
       </header>
       {article.coverImage && (
         <figure className="article-cover container">
-          <img src={article.coverImage} alt={article.coverImageAlt} width="1500" height="850" />
+          <img
+            src={article.coverImage}
+            alt={article.coverImageAlt}
+            width="1500"
+            height="850"
+            fetchPriority="high"
+          />
         </figure>
       )}
       <div className="container narrow">
         <MarkdownContent content={article.content} />
-        <div className="tags">
-          {article.tags.map((t) => (
-            <span key={t}>#{t}</span>
-          ))}
-        </div>
+        {article.tags.length > 0 && (
+          <div className="tags">
+            {article.tags.map((t) => (
+              <span key={t}>#{t}</span>
+            ))}
+          </div>
+        )}
         <ShareButtons title={article.title} url={url} />
       </div>
       {related.length > 0 && (

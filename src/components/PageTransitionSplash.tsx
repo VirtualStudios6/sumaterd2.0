@@ -1,5 +1,3 @@
-import { ShieldCheck } from 'lucide-react'
-
 export function PageTransitionSplash() {
   return (
     <div
@@ -8,19 +6,11 @@ export function PageTransitionSplash() {
       aria-live="polite"
       aria-label="Cargando página"
     >
+      <span className="page-transition-bar" aria-hidden="true" />
       <div className="page-transition-content" aria-hidden="true">
-        <div className="page-transition-security">
-          <ShieldCheck />
-          <span>SumateRD</span>
-        </div>
-        <div className="page-transition-mark">
-          <span>Súmate</span>
-          <strong>RD</strong>
-          <i />
-        </div>
-        <p>Cargando contenido…</p>
+        <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" width="72" height="72" />
       </div>
-      <span className="sr-only">Cargando página.</span>
+      <p className="sr-only">Cargando contenido…</p>
     </div>
   )
 }

@@ -51,12 +51,13 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['brand/logo.png'],
+        includeAssets: ['brand/logo.png', 'icons/*.png'],
         manifest: false,
         workbox: {
           navigateFallbackDenylist: [
             new RegExp(`^${routePrefix}/admin`),
             new RegExp(`^${routePrefix}/perfil`),
+            /^\/\.well-known\//,
           ],
           runtimeCaching: [
             {

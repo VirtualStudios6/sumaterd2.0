@@ -1,6 +1,6 @@
-import { Facebook, Instagram, Menu, Search, UserRound, X, Youtube } from 'lucide-react'
+import { Home, LogOut, Menu, MessageCircle, Search, UserRound, Vote, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../app/AuthProvider'
 import { CATEGORIES } from '../lib/constants'
 import { logoutUser } from '../services/auth'
@@ -8,7 +8,16 @@ import { Brand } from './Brand'
 
 export function Header() {
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const { user } = useAuth()
+  const { pathname } = useLocation()
+  useEffect(() => setOpen(false), [pathname])
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
   useEffect(() => {
     if (!open) return
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -22,27 +31,13 @@ export function Header() {
     }
   }, [open])
   return (
-    <header className="site-header">
-      <div className="topline">
-        <span>República Dominicana</span>
-        <span>
-          {new Intl.DateTimeFormat('es-DO', {
-            dateStyle: 'full',
-            timeZone: 'America/Santo_Domingo',
-          }).format(new Date())}
-        </span>
-      </div>
+    <header className={`site-header${scrolled ? ' is-scrolled' : ''}`}>
       <div className="header-main container">
-        <button
-          className="icon-button mobile-only"
-          aria-label="Abrir menú"
-          onClick={() => setOpen(true)}
-        >
-          <Menu />
-        </button>
         <Brand />
         <nav className="desktop-nav" aria-label="Navegación principal">
-          <NavLink to="/">Inicio</NavLink>
+          <NavLink to="/" end>
+            Inicio
+          </NavLink>
           {CATEGORIES.map((c) => (
             <NavLink key={c.slug} to={`/categoria/${c.slug}`}>
               {c.name}
@@ -50,12 +45,12 @@ export function Header() {
           ))}
         </nav>
         <div className="header-actions">
-          <Link className="icon-button" to="/buscar" aria-label="Buscar">
+          <Link className="icon-button desktop-only" to="/buscar" aria-label="Buscar">
             <Search />
           </Link>
           {user ? (
             <>
-              <Link to="/perfil" className="user-link">
+              <Link to="/perfil" className="user-link desktop-only">
                 <UserRound /> Perfil
               </Link>
               <button className="text-button desktop-only" onClick={() => void logoutUser()}>
@@ -72,42 +67,15 @@ export function Header() {
               </Link>
             </>
           )}
+          <button
+            className="icon-button mobile-only"
+            aria-label="Abrir menú"
+            aria-expanded={open}
+            onClick={() => setOpen(true)}
+          >
+            <Menu />
+          </button>
         </div>
-      </div>
-      <div className="social-strip">
-        <a
-          className="social-strip-icon instagram"
-          href="https://www.instagram.com/tu.sumaterd?stkn=MXc1Mm1zMnZoYnNqNw=="
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Instagram de SumateRD (se abre en una pestaña nueva)"
-        >
-          <Instagram />
-        </a>
-        <a
-          className="social-strip-icon facebook"
-          href="#"
-          onClick={(event) => event.preventDefault()}
-          aria-label="Facebook de SumateRD (próximamente)"
-        >
-          <Facebook />
-        </a>
-        <a
-          className="social-strip-icon x"
-          href="#"
-          onClick={(event) => event.preventDefault()}
-          aria-label="X de SumateRD (próximamente)"
-        >
-          <X />
-        </a>
-        <a
-          className="social-strip-icon youtube"
-          href="#"
-          onClick={(event) => event.preventDefault()}
-          aria-label="YouTube de SumateRD (próximamente)"
-        >
-          <Youtube />
-        </a>
       </div>
       {open && (
         <div className="mobile-menu-layer" onClick={() => setOpen(false)}>
@@ -128,26 +96,67 @@ export function Header() {
                 <X />
               </button>
             </div>
-            <nav onClick={() => setOpen(false)}>
-              <NavLink to="/">Inicio</NavLink>
+            <nav>
+              <NavLink to="/" end>
+                Inicio
+              </NavLink>
               {CATEGORIES.map((c) => (
                 <NavLink key={c.slug} to={`/categoria/${c.slug}`}>
                   {c.name}
                 </NavLink>
               ))}
-              <hr />
+              <NavLink to="/buscar">Buscar</NavLink>
+            </nav>
+            <div className="drawer-account">
               {user ? (
-                <Link to="/perfil">Mi perfil</Link>
+                <>
+                  <Link className="button secondary full" to="/perfil">
+                    <UserRound /> Mi perfil
+                  </Link>
+                  <button className="button ghost full" onClick={() => void logoutUser()}>
+                    <LogOut /> Cerrar sesión
+                  </button>
+                </>
               ) : (
                 <>
-                  <Link to="/login">Iniciar sesión</Link>
-                  <Link to="/registro">Crear cuenta</Link>
+                  <Link className="button full" to="/registro">
+                    Crear cuenta
+                  </Link>
+                  <Link className="button secondary full" to="/login">
+                    Iniciar sesión
+                  </Link>
                 </>
               )}
+            </div>
+            <nav className="drawer-legal" aria-label="Información">
+              <Link to="/sobre-nosotros">Sobre nosotros</Link>
+              <Link to="/privacidad">Privacidad</Link>
+              <Link to="/contacto">Contacto</Link>
             </nav>
           </div>
         </div>
       )}
     </header>
+  )
+}
+
+export function MobileTabBar() {
+  const { user } = useAuth()
+  const tabs = [
+    { to: '/', label: 'Inicio', icon: Home, end: true },
+    { to: '/categoria/opinion', label: 'Foro', icon: MessageCircle },
+    { to: '/categoria/cambio', label: 'Cambio', icon: Vote },
+    { to: '/buscar', label: 'Buscar', icon: Search },
+    { to: user ? '/perfil' : '/login', label: user ? 'Perfil' : 'Entrar', icon: UserRound },
+  ]
+  return (
+    <nav className="tab-bar" aria-label="Navegación de la app">
+      {tabs.map(({ to, label, icon: Icon, end }) => (
+        <NavLink key={label} to={to} end={end}>
+          <Icon aria-hidden="true" />
+          <span>{label}</span>
+        </NavLink>
+      ))}
+    </nav>
   )
 }

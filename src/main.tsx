@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import '@fontsource-variable/nunito-sans'
 import { registerSW } from 'virtual:pwa-register'
 import './styles.css'
+import './design.css'
 
 const requiredFirebaseValues = [
   import.meta.env.VITE_FIREBASE_API_KEY,

@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react'
-import { FileText, Images, MessageSquareText, Settings, UserRoundCog, Vote } from 'lucide-react'
+import {
+  FileText,
+  Images,
+  MessageSquareText,
+  PenLine,
+  Plus,
+  Settings,
+  UserRoundCog,
+  Users,
+  Vote,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ErrorState, Spinner } from '../../components/Ui'
 import { getAdminArticles, getDashboardCounts } from '../../services/articles'
@@ -29,11 +39,11 @@ export function DashboardPage() {
     <>
       <div className="admin-title">
         <div>
-          <p>CMS</p>
-          <h1>Resumen editorial</h1>
+          <p>Panel</p>
+          <h1>Resumen</h1>
         </div>
         <Link className="button" to="/admin/articles/new">
-          Nuevo artículo
+          <Plus /> Nuevo artículo
         </Link>
       </div>
       {error && <ErrorState message={error} />}
@@ -42,34 +52,41 @@ export function DashboardPage() {
       ) : (
         counts && (
           <div className="metric-grid">
-            <div>
-              <span>Total artículos</span>
-              <strong>{counts.total}</strong>
-            </div>
-            <div>
-              <span>Publicados</span>
-              <strong>{counts.published}</strong>
-            </div>
-            <div>
-              <span>Borradores</span>
-              <strong>{counts.drafts}</strong>
-            </div>
-            <div>
-              <span>Paneles activos</span>
-              <strong>{counts.panels}</strong>
-            </div>
-            <div>
-              <span>Usuarios</span>
-              <strong>{counts.users}</strong>
-            </div>
-            <div>
-              <span>Conversaciones</span>
-              <strong>{counts.forumPosts}</strong>
-            </div>
-            <div>
-              <span>Solicitudes Cambio</span>
-              <strong>{counts.changeInterests}</strong>
-            </div>
+            {[
+              {
+                label: 'Publicados',
+                value: counts.published,
+                icon: FileText,
+                to: '/admin/articles',
+              },
+              { label: 'Borradores', value: counts.drafts, icon: PenLine, to: '/admin/articles' },
+              { label: 'Usuarios', value: counts.users, icon: Users, to: '/admin/users' },
+              {
+                label: 'Conversaciones',
+                value: counts.forumPosts,
+                icon: MessageSquareText,
+                to: '/admin/forum',
+              },
+              {
+                label: 'Solicitudes Cambio',
+                value: counts.changeInterests,
+                icon: Vote,
+                to: '/admin/change',
+              },
+              {
+                label: 'Paneles activos',
+                value: counts.panels,
+                icon: Images,
+                to: '/admin/carousel',
+              },
+            ].map(({ label, value, icon: Icon, to }) => (
+              <Link key={label} to={to}>
+                <span>
+                  <Icon aria-hidden="true" /> {label}
+                </span>
+                <strong>{value.toLocaleString('es-DO')}</strong>
+              </Link>
+            ))}
           </div>
         )
       )}

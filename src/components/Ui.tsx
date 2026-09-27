@@ -1,5 +1,5 @@
 import { AlertTriangle, Inbox, Info } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 export function Spinner({ label = 'Cargando' }: { label?: string }) {
   return (
     <div className="status" role="status">
@@ -48,14 +48,30 @@ export function ConfirmDialog({
   onConfirm: () => void
   busy?: boolean
 }) {
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!open) return
+    cancelRef.current?.focus()
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !busy) onCancel()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, busy, onCancel])
   if (!open) return null
   return (
-    <div className="modal-backdrop">
-      <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title">
+    <div className="modal-backdrop" onClick={() => !busy && onCancel()}>
+      <div
+        className="modal"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="dialog-title"
+        onClick={(event) => event.stopPropagation()}
+      >
         <h2 id="dialog-title">{title}</h2>
         <p>{children}</p>
         <div className="actions">
-          <button className="button secondary" onClick={onCancel} disabled={busy}>
+          <button ref={cancelRef} className="button secondary" onClick={onCancel} disabled={busy}>
             Cancelar
           </button>
           <button className="button danger" onClick={onConfirm} disabled={busy}>
